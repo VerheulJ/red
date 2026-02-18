@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PCSF – Alcohol en Ratas</title>
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d1117; --surface: #161b22; --border: rgba(255,255,255,0.08);
+      --text: #c9d1d9; --muted: #6e7681; --accent: #58a6ff;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:"DM Sans",sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+    .header { padding:22px 36px 18px; border-bottom:1px solid var(--border);
+              display:flex; align-items:center; justify-content:space-between; }
+    .header h1 { font-size:1.4em; font-weight:700; color:#fff; letter-spacing:-0.5px; }
+    .header p  { font-size:0.8em; color:var(--muted); margin-top:3px; }
+    .header-badge { background:rgba(88,166,255,0.12); border:1px solid rgba(88,166,255,0.3);
+                    color:var(--accent); padding:5px 14px; border-radius:20px; font-size:0.78em; }
+    .controls { display:flex; gap:20px; align-items:center; padding:12px 36px;
+                border-bottom:1px solid var(--border); flex-wrap:wrap; }
+    .ctrl-group { display:flex; align-items:center; gap:8px; }
+    .ctrl-label { font-size:0.75em; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+    .cond-btn { background:var(--surface); border:2px solid var(--color,#444); color:#fff;
+                padding:9px 24px; border-radius:9px; cursor:pointer;
+                font-family:"DM Sans",sans-serif; font-size:0.92em; font-weight:600;
+                transition:all 0.2s ease; }
+    .cond-btn:hover { filter:brightness(1.2); }
+    .cond-btn.active { background:color-mix(in srgb,var(--color) 20%,transparent);
+                       box-shadow:0 0 0 1px var(--color),0 4px 16px color-mix(in srgb,var(--color) 30%,transparent); }
+    .pval-btn { background:var(--surface); border:1px solid var(--border); color:var(--muted);
+                padding:7px 18px; border-radius:7px; cursor:pointer;
+                font-family:"DM Mono",monospace; font-size:0.82em; transition:all 0.2s ease; }
+    .pval-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .pval-btn.active { background:rgba(88,166,255,0.15); border-color:var(--accent); color:var(--accent); }
+    .stats-bar { display:flex; border-bottom:1px solid var(--border); }
+    .stat { flex:1; padding:11px 20px; text-align:center; border-right:1px solid var(--border); }
+    .stat:last-child { border-right:none; }
+    .stat-val { font-family:"DM Mono",monospace; font-size:1.5em; font-weight:500; color:var(--accent); }
+    .stat-lbl { font-size:0.7em; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+    .workspace { display:flex; height:calc(100vh - 175px); }
+    #network-wrap { flex:1; background:#fff; }
+    #network { width:100%; height:100%; }
+    .legend { width:260px; background:var(--surface); border-left:1px solid var(--border);
+              padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:14px; }
+    .legend h3 { font-size:0.82em; font-weight:600; color:#fff;
+                 text-transform:uppercase; letter-spacing:1px; }
+    .legend-sub { font-size:0.7em; color:var(--muted); font-weight:400;
+                  text-transform:none; letter-spacing:0; }
+    .cluster-item { display:flex; align-items:center; gap:9px; padding:8px 9px;
+                    border-radius:7px; cursor:pointer; transition:background 0.15s; }
+    .cluster-item:hover { background:rgba(255,255,255,0.05); }
+    .cluster-item.dimmed { opacity:0.2; }
+    .cluster-swatch { width:13px; height:13px; border-radius:3px; flex-shrink:0; }
+    .cluster-text { flex:1; }
+    .cluster-name { font-size:0.85em; font-weight:500; }
+    .cluster-meta { font-size:0.7em; color:var(--muted); font-family:"DM Mono",monospace; }
+    .cluster-rank { font-size:0.65em; font-weight:700; color:var(--muted);
+                    background:rgba(255,255,255,0.07); padding:2px 6px; border-radius:4px; }
+    .divider { border-top:1px solid var(--border); padding-top:12px; }
+    .shape-row, .reg-row { display:flex; align-items:center; gap:8px;
+                           font-size:0.8em; color:var(--muted); margin-bottom:6px; }
+    .reg-dot { width:11px; height:11px; border-radius:50%; border:3px solid; flex-shrink:0; }
+    /* Tooltip custom */
+    #custom-tooltip {
+      position:fixed; display:none; z-index:9999; pointer-events:none;
+      max-width:360px; font-size:0.83em;
+    }
+  </style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>PCSF Network — Alcohol en Ratas</h1>
+    <p>Prize-Collecting Steiner Forest · STRING <i>Rattus norvegicus</i> · Verheul-Campos et al.</p>
+  </div>
+  <div class="header-badge">Hippocampal Proteomics</div>
+</div>
+<div class="controls">
+  <div class="ctrl-group">
+    <span class="ctrl-label">Sexo</span>
+    <button class="cond-btn active" data-cond="HEMBRAS" style="--color:#E41A1C">Hembras</button>
+    <button class="cond-btn" data-cond="MACHOS" style="--color:#377EB8">Machos</button>
+  </div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">Umbral</span>
+    <button class="pval-btn active" data-pval="P005">p &lt; 0.05</button>
+    <button class="pval-btn" data-pval="P001">p &lt; 0.01</button>
+  </div>
+</div>
+<div class="stats-bar">
+  <div class="stat"><div class="stat-val" id="s-nodos">—</div><div class="stat-lbl">Nodos</div></div>
+  <div class="stat"><div class="stat-val" id="s-aristas">—</div><div class="stat-lbl">Aristas</div></div>
+  <div class="stat"><div class="stat-val" id="s-clusters">—</div><div class="stat-lbl">Clusters</div></div>
+</div>
+<div class="workspace">
+  <div id="network-wrap"><div id="network"></div></div>
+  <div class="legend">
+    <div>
+      <h3>Clusters <span class="legend-sub">por |log2FC| medio</span></h3>
+      <div id="cluster-list"></div>
+    </div>
+    <div class="divider">
+      <h3 style="margin-bottom:9px">Tipo de nodo</h3>
+      <div class="shape-row">
+        <svg width="13" height="13" viewBox="0 0 13 13"><circle cx="6.5" cy="6.5" r="5.5" fill="#667eea"/></svg>
+        Terminal (diferencial)
+      </div>
+      <div class="shape-row">
+        <svg width="13" height="13" viewBox="0 0 13 13"><polygon points="6.5,1 12,12 1,12" fill="#667eea"/></svg>
+        Steiner (conector)
+      </div>
+    </div>
+    <div class="divider">
+      <h3 style="margin-bottom:9px">Regulación (borde)</h3>
+      <div class="reg-row"><div class="reg-dot" style="border-color:#FF0000"></div>Up-regulated</div>
+      <div class="reg-row"><div class="reg-dot" style="border-color:#0000FF"></div>Down-regulated</div>
+      <div class="reg-row"><div class="reg-dot" style="border-color:#888"></div>Steiner</div>
+    </div>
+  </div>
+</div>
+<div id="custom-tooltip"></div>
+<script>
+const DATA = {"HEMBRAS":[],"MACHOS":[]};
+
+let net = null, activeCond = "HEMBRAS", activePval = "P005", selCluster = null;
+
+document.querySelectorAll(".cond-btn").forEach(b => b.addEventListener("click", function() {
+  document.querySelectorAll(".cond-btn").forEach(x => x.classList.remove("active"));
+  this.classList.add("active"); activeCond = this.dataset.cond; render();
+}));
+document.querySelectorAll(".pval-btn").forEach(b => b.addEventListener("click", function() {
+  document.querySelectorAll(".pval-btn").forEach(x => x.classList.remove("active"));
+  this.classList.add("active"); activePval = this.dataset.pval; render();
+}));
+
+function render() {
+  selCluster = null;
+  const d = DATA[activeCond] && DATA[activeCond][activePval];
+  if (!d) {
+    ["s-nodos","s-aristas","s-clusters"].forEach(id => document.getElementById(id).textContent = "0");
+    if (net) net.destroy();
+    document.getElementById("network").innerHTML = ["<div style="display:flex;", "align-items:center;justify-content:center;", "height:100%;color:#aaa;font-size:1.1em;">Sin datos</div>"].join("");
+    document.getElementById("cluster-list").innerHTML = "";
+    return;
+  }
+  document.getElementById("s-nodos").textContent   = d.stats.nodos;
+  document.getElementById("s-aristas").textContent = d.stats.aristas;
+  document.getElementById("s-clusters").textContent = d.stats.clusters;
+
+  const nodes = new vis.DataSet(d.nodos.map(n => ({
+    id: n.id, label: n.label, x: n.x, y: n.y, size: n.size,
+    color: { background: n.color, border: n.border,
+             highlight: { background: n.color, border: n.border } },
+    borderWidth: 3,
+    shape: n.shape,
+    font: { size: 9, color: "#222", face: "DM Sans" },
+    cluster: n.cluster
+  })));
+
+  const edges = new vis.DataSet(d.aristas.map((e, i) => ({
+    id: i, from: e.from, to: e.to,
+    width: Math.max(0.5, Math.min(2.5, e.weight / 250)),
+    color: { color: "#ccc", opacity: 0.7 }
+  })));
+
+  if (net) net.destroy();
+  net = new vis.Network(document.getElementById("network"), { nodes, edges }, {
+    physics: false,
+    interaction: { hover: true, zoomView: true, dragView: true, dragNodes: true }
+  });
+
+  // Tooltip manual con HTML renderizado
+  const tooltip = document.getElementById("custom-tooltip");
+  net.on("hoverNode", function(params) {
+    const node = d.nodos.find(n => String(n.id) === String(params.node));
+    if (node && node.title) {
+      tooltip.innerHTML = node.title;
+      tooltip.style.display = "block";
+    }
+  });
+  net.on("blurNode", () => { tooltip.style.display = "none"; });
+  document.getElementById("network-wrap").addEventListener("mousemove", function(e) {
+    if (tooltip.style.display === "block") {
+      const x = e.clientX + 14, y = e.clientY + 14;
+      const tw = tooltip.offsetWidth, th = tooltip.offsetHeight;
+      tooltip.style.left = (x + tw > window.innerWidth  ? e.clientX - tw - 10 : x) + "px";
+      tooltip.style.top  = (y + th > window.innerHeight ? e.clientY - th - 10 : y) + "px";
+    }
+  });
+
+  // Leyenda clusters
+  const list = document.getElementById("cluster-list");
+  list.innerHTML = "";
+  d.clusters.forEach(c => {
+    const el = document.createElement("div");
+    el.className = "cluster-item";
+    el.dataset.cluster = c.cluster;
+    el.innerHTML = `<div class="cluster-swatch" style="background:${c.color}"></div>
+      <div class="cluster-text">
+        <div class="cluster-name">Cluster ${c.cluster}</div>
+        <div class="cluster-meta">${c.count} genes · |FC|=${c.mean_fc}</div>
+      </div>
+      <div class="cluster-rank">#${c.rank}</div>`;
+    el.onclick = () => toggleCluster(c.cluster);
+    list.appendChild(el);
+  });
+}
+
+function toggleCluster(cid) {
+  const d = DATA[activeCond][activePval];
+  if (selCluster === cid) {
+    selCluster = null;
+    net.body.data.nodes.update(d.nodos.map(n => ({
+      id: n.id, color: { background: n.color, border: n.border }
+    })));
+    document.querySelectorAll(".cluster-item").forEach(x => x.classList.remove("dimmed"));
+  } else {
+    selCluster = cid;
+    net.body.data.nodes.update(d.nodos.map(n => ({
+      id: n.id,
+      color: n.cluster === cid
+        ? { background: n.color, border: n.border }
+        : { background: "#e8e8e8", border: "#ccc" }
+    })));
+    document.querySelectorAll(".cluster-item").forEach(x => {
+      x.classList.toggle("dimmed", parseInt(x.dataset.cluster) !== cid);
+    });
+  }
+}
+
+render();
+</script>
+</body>
+</html>
