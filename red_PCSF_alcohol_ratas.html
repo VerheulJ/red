@@ -63,20 +63,9 @@
     .shape-row, .reg-row { display:flex; align-items:center; gap:8px;
                            font-size:0.8em; color:var(--muted); margin-bottom:6px; }
     .reg-dot { width:11px; height:11px; border-radius:50%; border:3px solid; flex-shrink:0; }
-
-    /* ── TOOLTIP CUSTOM ─────────────────────────────────────────────────── */
     #custom-tooltip {
-      position: fixed;
-      display: none;
-      z-index: 9999;
-      pointer-events: none;
-      max-width: 380px;
-      font-size: 0.83em;
-      background: #1c2333;
-      border: 1px solid rgba(88,166,255,0.35);
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04);
-      overflow: hidden;
+      position:fixed; display:none; z-index:9999; pointer-events:none;
+      max-width:360px; font-size:0.83em;
     }
   </style>
 </head>
@@ -137,6 +126,9 @@ const DATA = {"HEMBRAS":{"P005":{"nodos":[{"id":"Abhd3","label":"Abhd3","x":1936
 
 let net = null, activeCond = "HEMBRAS", activePval = "P005", selCluster = null;
 
+// Debug: verificar que DATA está definido
+console.log("DATA loaded:", DATA);
+
 document.querySelectorAll(".cond-btn").forEach(b => b.addEventListener("click", function() {
   document.querySelectorAll(".cond-btn").forEach(x => x.classList.remove("active"));
   this.classList.add("active"); activeCond = this.dataset.cond; render();
@@ -149,78 +141,78 @@ document.querySelectorAll(".pval-btn").forEach(b => b.addEventListener("click", 
 function render() {
   selCluster = null;
   const d = DATA[activeCond] && DATA[activeCond][activePval];
-
+  
+  console.log("Rendering:", activeCond, activePval, d);
+  
   if (!d) {
     ["s-nodos","s-aristas","s-clusters"].forEach(id => document.getElementById(id).textContent = "0");
     if (net) net.destroy();
-    document.getElementById("network").innerHTML =
-      '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#aaa;font-size:1.1em;">Sin datos</div>';
+    document.getElementById("network").innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#aaa;font-size:1.1em;">Sin datos</div>';
     document.getElementById("cluster-list").innerHTML = "";
     return;
   }
-
-  document.getElementById("s-nodos").textContent    = d.stats.nodos;
-  document.getElementById("s-aristas").textContent  = d.stats.aristas;
+  
+  // Validar que tenemos datos de nodos
+  if (!d.nodos || d.nodos.length === 0) {
+    console.error("No hay nodos en los datos:", d);
+    document.getElementById("network").innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#f55;font-size:1.1em;">Error: sin nodos en datos</div>';
+    return;
+  }
+  
+  document.getElementById("s-nodos").textContent   = d.stats.nodos;
+  document.getElementById("s-aristas").textContent = d.stats.aristas;
   document.getElementById("s-clusters").textContent = d.stats.clusters;
 
   const nodes = new vis.DataSet(d.nodos.map(n => ({
-    id:    n.id,
-    label: n.label,
-    x:     n.x,
-    y:     n.y,
-    size:  n.size,
-    color: {
-      background: n.color,
-      border:     n.border,
-      highlight:  { background: n.color, border: n.border }
+    id: n.id, 
+    label: n.label, 
+    x: n.x, 
+    y: n.y, 
+    size: n.size,
+    color: { 
+      background: n.color, 
+      border: n.border,
+      highlight: { background: n.color, border: n.border } 
     },
     borderWidth: 3,
-    shape:       n.shape,
-    font:        { size: 9, color: "#222", face: "DM Sans" },
-    cluster:     n.cluster,
-    // FIX: title:undefined desactiva el tooltip nativo de vis que mostraba HTML crudo
-    title:       undefined,
-    tooltipHtml: n.title   // guardamos el HTML en campo propio
+    shape: n.shape,
+    font: { size: 9, color: "#222", face: "DM Sans" },
+    cluster: n.cluster,
+    title: n.title
   })));
 
   const edges = new vis.DataSet((d.aristas || []).map((e, i) => ({
-    id:    i,
-    from:  e.from,
-    to:    e.to,
+    id: i, 
+    from: e.from, 
+    to: e.to,
     width: Math.max(0.5, Math.min(2.5, e.weight / 250)),
     color: { color: "#ccc", opacity: 0.7 }
   })));
 
+  console.log("Nodes count:", nodes.length, "Edges count:", edges.length);
+
   if (net) net.destroy();
   net = new vis.Network(document.getElementById("network"), { nodes, edges }, {
     physics: false,
-    interaction: {
-      hover:      true,
-      zoomView:   true,
-      dragView:   true,
-      dragNodes:  true,
-      tooltipDelay: 99999   // desactiva el tooltip nativo por delay infinito (doble seguro)
-    }
+    interaction: { hover: true, zoomView: true, dragView: true, dragNodes: true }
   });
 
   const tooltip = document.getElementById("custom-tooltip");
-
-  // FIX: leer tooltipHtml en lugar de title
   net.on("hoverNode", function(params) {
-    const nodeData = nodes.get(params.node);
-    if (nodeData && nodeData.tooltipHtml) {
-      tooltip.innerHTML = nodeData.tooltipHtml;
+    const nodeId = params.node;
+    const nodeData = nodes.get(nodeId);
+    if (nodeData && nodeData.title) {
+      tooltip.innerHTML = nodeData.title;
       tooltip.style.display = "block";
     }
   });
-  net.on("blurNode",  () => { tooltip.style.display = "none"; });
-
+  net.on("blurNode", () => { tooltip.style.display = "none"; });
   document.getElementById("network-wrap").addEventListener("mousemove", function(e) {
     if (tooltip.style.display === "block") {
-      const x  = e.clientX + 16, y = e.clientY + 16;
+      const x = e.clientX + 14, y = e.clientY + 14;
       const tw = tooltip.offsetWidth, th = tooltip.offsetHeight;
-      tooltip.style.left = (x + tw > window.innerWidth  ? e.clientX - tw - 12 : x) + "px";
-      tooltip.style.top  = (y + th > window.innerHeight ? e.clientY - th - 12 : y) + "px";
+      tooltip.style.left = (x + tw > window.innerWidth  ? e.clientX - tw - 10 : x) + "px";
+      tooltip.style.top  = (y + th > window.innerHeight ? e.clientY - th - 10 : y) + "px";
     }
   });
 
@@ -247,7 +239,7 @@ function toggleCluster(cid) {
   if (selCluster === cid) {
     selCluster = null;
     net.body.data.nodes.update(d.nodos.map(n => ({
-      id: n.id,
+      id: n.id, 
       color: { background: n.color, border: n.border }
     })));
     document.querySelectorAll(".cluster-item").forEach(x => x.classList.remove("dimmed"));
