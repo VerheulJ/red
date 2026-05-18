@@ -7,182 +7,131 @@
   <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg:#0a0e1a; --surface:#111827; --surface2:#1a2234;
-      --border:rgba(255,255,255,0.07); --text:#e2e8f0; --muted:#64748b;
-      --accent:#38bdf8; --up:#f87171; --down:#60a5fa;
-    }
+    :root{--bg:#0a0e1a;--surface:#111827;--surface2:#1a2234;
+          --border:rgba(255,255,255,0.07);--text:#e2e8f0;--muted:#64748b;
+          --accent:#38bdf8;--up:#f87171;--down:#60a5fa}
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     body{font-family:"IBM Plex Sans",sans-serif;background:var(--bg);
          color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
-
-    /* HEADER */
     .header{padding:10px 14px;border-bottom:1px solid var(--border);
             display:flex;align-items:center;justify-content:space-between;
             background:var(--surface);flex-shrink:0}
-    .header-left h1{font-size:0.9em;font-weight:600;color:#fff;letter-spacing:-0.3px;line-height:1.2}
-    .header-left p{font-size:0.62em;color:var(--muted);margin-top:2px;
-                   font-family:"IBM Plex Mono",monospace}
+    .header-left h1{font-size:0.88em;font-weight:600;color:#fff;letter-spacing:-0.3px;line-height:1.2}
+    .header-left p{font-size:0.6em;color:var(--muted);margin-top:2px;font-family:"IBM Plex Mono",monospace}
     .badge{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.25);
            color:var(--accent);padding:3px 8px;border-radius:20px;
-           font-size:0.65em;font-family:"IBM Plex Mono",monospace;white-space:nowrap}
-
-    /* CONTROLS */
+           font-size:0.63em;font-family:"IBM Plex Mono",monospace;white-space:nowrap}
     .controls{padding:8px 14px;border-bottom:1px solid var(--border);
-              display:flex;align-items:center;gap:8px;
-              background:var(--surface);overflow-x:auto;flex-shrink:0;
-              -webkit-overflow-scrolling:touch;scrollbar-width:none}
+              display:flex;align-items:center;gap:8px;background:var(--surface);
+              overflow-x:auto;flex-shrink:0;-webkit-overflow-scrolling:touch;scrollbar-width:none}
     .controls::-webkit-scrollbar{display:none}
-    .ctrl-label{font-size:0.62em;color:var(--muted);text-transform:uppercase;
+    .ctrl-label{font-size:0.6em;color:var(--muted);text-transform:uppercase;
                 letter-spacing:1.2px;white-space:nowrap;flex-shrink:0}
-    .cond-btn{background:var(--surface2);border:2px solid var(--c,#444);
-              color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;
-              font-family:"IBM Plex Sans",sans-serif;font-size:0.8em;font-weight:500;
-              transition:all 0.2s ease;white-space:nowrap;flex-shrink:0;
-              min-height:36px;touch-action:manipulation}
-    .cond-btn:hover{filter:brightness(1.25)}
-    .cond-btn.active{
-      background:color-mix(in srgb,var(--c) 18%,transparent);
-      box-shadow:0 0 0 1px var(--c),0 4px 16px color-mix(in srgb,var(--c) 25%,transparent)
-    }
-
-    /* STATS */
+    .cond-btn{background:var(--surface2);border:2px solid var(--c,#444);color:#fff;
+              padding:6px 14px;border-radius:8px;cursor:pointer;font-family:"IBM Plex Sans",sans-serif;
+              font-size:0.8em;font-weight:500;white-space:nowrap;flex-shrink:0;
+              min-height:38px;touch-action:manipulation;transition:all 0.2s}
+    .cond-btn.active{background:color-mix(in srgb,var(--c) 18%,transparent);
+      box-shadow:0 0 0 1px var(--c),0 4px 16px color-mix(in srgb,var(--c) 25%,transparent)}
     .stats{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
-    .stat{flex:1;padding:6px 4px;text-align:center;border-right:1px solid var(--border)}
+    .stat{flex:1;padding:7px 4px;text-align:center;border-right:1px solid var(--border)}
     .stat:last-child{border-right:none}
-    .stat-val{font-family:"IBM Plex Mono",monospace;font-size:1em;
-              font-weight:600;color:var(--accent)}
-    .stat-lbl{font-size:0.55em;color:var(--muted);text-transform:uppercase;
-              letter-spacing:1px;margin-top:1px}
-
-    /* WORKSPACE */
+    .stat-val{font-family:"IBM Plex Mono",monospace;font-size:1.1em;font-weight:600;color:var(--accent)}
+    .stat-lbl{font-size:0.54em;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:1px}
     .workspace{display:flex;flex:1;overflow:hidden;flex-direction:column}
-
-    /* NETWORK */
     #network-wrap{flex:1;background:#f8fafc;position:relative;min-height:0}
     #network{width:100%;height:100%}
 
-    /* BOTTOM PANEL — reemplaza sidebar en móvil */
-    .bottom-panel{
-      background:var(--surface);
-      border-top:1px solid var(--border);
-      flex-shrink:0;
-      display:flex;
-      flex-direction:column;
-      transition:height 0.3s ease;
-      height:44px;
-    }
-    .bottom-panel.expanded{height:220px}
-
-    .panel-toggle{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:0 14px;height:44px;cursor:pointer;flex-shrink:0;
-      touch-action:manipulation;user-select:none;
-    }
+    /* BOTTOM PANEL */
+    .bottom-panel{background:var(--surface);border-top:1px solid var(--border);
+                  flex-shrink:0;display:flex;flex-direction:column;
+                  transition:height 0.3s ease;height:48px;overflow:hidden}
+    .bottom-panel.expanded{height:260px}
+    .panel-toggle{display:flex;align-items:center;justify-content:space-between;
+                  padding:0 14px;height:48px;cursor:pointer;flex-shrink:0;
+                  touch-action:manipulation;user-select:none;border-bottom:1px solid transparent}
+    .bottom-panel.expanded .panel-toggle{border-bottom-color:var(--border)}
     .panel-toggle-left{display:flex;align-items:center;gap:8px}
-    .panel-title{font-size:0.72em;font-weight:600;color:var(--muted);
+    .panel-title{font-size:0.7em;font-weight:600;color:var(--muted);
                  text-transform:uppercase;letter-spacing:1.2px}
-    .panel-arrow{color:var(--muted);font-size:0.8em;transition:transform 0.3s ease}
+    .panel-arrow{color:var(--muted);font-size:0.75em;transition:transform 0.3s}
     .bottom-panel.expanded .panel-arrow{transform:rotate(180deg)}
-    .cluster-pills-row{
-      display:flex;gap:6px;padding:0 14px 6px;
-      overflow-x:auto;flex-shrink:0;-webkit-overflow-scrolling:touch;scrollbar-width:none
-    }
+    .active-badge{font-size:0.65em;color:var(--accent);font-family:"IBM Plex Mono",monospace}
+
+    /* PILLS */
+    .cluster-pills-row{display:flex;gap:6px;padding:8px 14px 6px;
+                       overflow-x:auto;flex-shrink:0;-webkit-overflow-scrolling:touch;
+                       scrollbar-width:none}
     .cluster-pills-row::-webkit-scrollbar{display:none}
-    .cluster-pill{
-      display:flex;align-items:center;gap:5px;
-      padding:5px 10px;border-radius:20px;cursor:pointer;
-      border:1px solid transparent;white-space:nowrap;flex-shrink:0;
-      touch-action:manipulation;transition:all 0.15s
-    }
-    .cluster-pill:hover{border-color:rgba(255,255,255,0.15)}
-    .cluster-pill.active{border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.08)}
+    .cluster-pill{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;
+                  cursor:pointer;border:1.5px solid transparent;white-space:nowrap;flex-shrink:0;
+                  touch-action:manipulation;transition:all 0.15s}
+    .cluster-pill.active{border-color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.1)}
     .cluster-pill.dimmed{opacity:0.2}
-    .pill-swatch{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+    .pill-swatch{width:8px;height:8px;border-radius:50%;flex-shrink:0}
     .pill-label{font-size:0.72em;font-weight:500;color:var(--text)}
-    .pill-meta{font-size:0.62em;color:var(--muted);font-family:"IBM Plex Mono",monospace}
+    .pill-fc{font-size:0.62em;color:var(--muted);font-family:"IBM Plex Mono",monospace}
 
-    .panel-content{flex:1;overflow-y:auto;padding:0 14px 10px;
-                   -webkit-overflow-scrolling:touch;scrollbar-width:thin}
-    .panel-content::-webkit-scrollbar{width:3px}
-    .panel-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+    /* CLUSTER CARDS in expanded panel */
+    .panel-body{flex:1;overflow-y:auto;padding:8px 14px 12px;
+                -webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:6px}
+    .cluster-card{background:var(--surface2);border:1px solid var(--border);
+                  border-radius:10px;padding:10px 12px;cursor:pointer;
+                  display:flex;align-items:center;gap:10px;
+                  touch-action:manipulation;transition:border-color 0.15s}
+    .cluster-card:hover{border-color:rgba(255,255,255,0.15)}
+    .cluster-card.active{border-color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.07)}
+    .cluster-card.dimmed{opacity:0.2}
+    .card-swatch{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+    .card-info{flex:1;min-width:0}
+    .card-name{font-size:0.82em;font-weight:600;color:var(--text)}
+    .card-meta{font-size:0.68em;color:var(--muted);font-family:"IBM Plex Mono",monospace;margin-top:2px}
+    .card-rank{font-size:0.65em;font-weight:700;color:var(--accent);
+               background:rgba(56,189,248,0.1);padding:3px 7px;border-radius:4px;flex-shrink:0}
 
-    .legend-section{
-      display:flex;flex-wrap:wrap;gap:12px 20px;
-      padding:8px 14px;border-top:1px solid var(--border);flex-shrink:0;
-    }
-    .legend-group{display:flex;align-items:center;gap:6px}
-    .legend-label{font-size:0.65em;color:var(--muted)}
+    /* LEGEND inside panel */
+    .legend-row{display:flex;flex-wrap:wrap;gap:8px 16px;padding:8px 14px;
+                border-top:1px solid var(--border);flex-shrink:0}
+    .leg-item{display:flex;align-items:center;gap:5px;font-size:0.64em;color:var(--muted)}
     .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-    .tri{width:0;height:0;border-left:5px solid transparent;
-         border-right:5px solid transparent;border-bottom:9px solid;flex-shrink:0}
+    .tri{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;
+         border-bottom:9px solid;flex-shrink:0}
     .ring{width:8px;height:8px;border-radius:50%;border:2.5px solid;flex-shrink:0}
 
-    /* TOOLTIP */
-    #tooltip{
-      position:fixed;display:none;z-index:9999;pointer-events:none;
-      max-width:calc(100vw - 28px);font-size:0.78em;
-      font-family:"IBM Plex Sans",sans-serif;
-    }
-    #tooltip .tt-inner{
-      background:#fff;color:#333;border-radius:12px;
-      box-shadow:0 4px 24px rgba(0,0,0,0.3);padding:12px;
-    }
-    #tooltip h4{margin:0 0 7px;color:#2E4057;
-      border-bottom:2px solid #eee;padding-bottom:5px;font-size:0.95em}
-    #tooltip p{margin:0 0 6px;color:#666;font-size:0.85em}
-    #tooltip b{color:#333}
-    #tooltip span{font-size:0.85em}
+    /* NODE MODAL (tooltip en móvil) */
+    .node-modal-overlay{display:none;position:fixed;inset:0;z-index:9999;
+                        background:rgba(0,0,0,0.6);align-items:flex-end;justify-content:center}
+    .node-modal-overlay.show{display:flex}
+    .node-modal{background:#fff;width:100%;max-height:75vh;border-radius:16px 16px 0 0;
+                overflow-y:auto;-webkit-overflow-scrolling:touch;font-family:"IBM Plex Sans",sans-serif}
+    .node-modal-handle{width:40px;height:4px;background:#ddd;border-radius:2px;
+                       margin:10px auto 0;display:block}
+    .node-modal-content{padding:12px 16px 24px;color:#333;font-size:0.9em}
+    .node-modal-close{display:block;width:100%;padding:12px;margin-top:8px;
+                      background:#f5f5f5;border:none;border-radius:8px;
+                      font-size:0.85em;color:#666;cursor:pointer;touch-action:manipulation}
 
-    /* HINT OVERLAY */
-    .network-hint{
-      position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
-      background:rgba(0,0,0,0.55);color:#fff;font-size:0.65em;
-      padding:4px 10px;border-radius:20px;pointer-events:none;
-      font-family:"IBM Plex Mono",monospace;white-space:nowrap;
-      opacity:1;transition:opacity 1s ease;
-    }
+    .network-hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+                  background:rgba(0,0,0,0.55);color:#fff;font-size:0.62em;
+                  padding:4px 10px;border-radius:20px;pointer-events:none;
+                  font-family:"IBM Plex Mono",monospace;white-space:nowrap;
+                  opacity:1;transition:opacity 1s}
     .network-hint.hide{opacity:0}
 
-    /* TABLET / DESKTOP: restore sidebar layout */
     @media(min-width:640px){
       .workspace{flex-direction:row}
-      .bottom-panel{
-        width:240px;height:auto!important;border-top:none;border-left:1px solid var(--border);
-        flex-direction:column;
-      }
+      .bottom-panel{width:250px;height:auto!important;border-top:none;
+                    border-left:1px solid var(--border);overflow:hidden}
       .bottom-panel.expanded{height:auto!important}
       .panel-toggle{display:none}
       .cluster-pills-row{display:none}
-      .panel-content{
-        flex:1;padding:8px;display:flex;flex-direction:column;gap:2px;
-        overflow-y:auto;
-      }
-      .cluster-item-full{
-        display:flex;align-items:center;gap:8px;padding:6px 8px;
-        border-radius:7px;cursor:pointer;transition:background 0.15s;
-        border:1px solid transparent;
-      }
-      .cluster-item-full:hover{background:rgba(255,255,255,0.04);border-color:var(--border)}
-      .cluster-item-full.active{background:rgba(56,189,248,0.07);border-color:rgba(56,189,248,0.2)}
-      .cluster-item-full.dimmed{opacity:0.18}
-      .swatch{width:10px;height:10px;border-radius:2px;flex-shrink:0}
-      .cl-info{flex:1;min-width:0}
-      .cl-name{font-size:0.78em;font-weight:500}
-      .cl-meta{font-size:0.65em;color:var(--muted);font-family:"IBM Plex Mono",monospace}
-      .cl-rank{font-size:0.58em;font-weight:700;color:var(--muted);
-               background:rgba(255,255,255,0.06);padding:2px 5px;border-radius:3px;flex-shrink:0}
-      .panel-sidebar-title{font-size:0.63em;font-weight:600;color:var(--muted);
-                           text-transform:uppercase;letter-spacing:1.2px;
-                           padding:12px 14px 6px;flex-shrink:0}
-      .legend-section{flex-direction:column;gap:6px;padding:10px 14px}
-      .legend-group{gap:7px}
-      .legend-label{font-size:0.72em}
+      .panel-body{display:flex!important;padding:6px 8px 10px}
+      .cluster-card{padding:8px 10px}
+      .legend-row{flex-direction:column;gap:6px}
     }
   </style>
 </head>
 <body>
-
 <div class="header">
   <div class="header-left">
     <h1>iPCSF — <em>Rattus norvegicus</em></h1>
@@ -190,261 +139,184 @@
   </div>
   <div class="badge">iPCSF v0.0.1</div>
 </div>
-
-<div class="controls" id="controls">
-  <span class="ctrl-label">Cond.</span>
-</div>
-
+<div class="controls" id="controls"><span class="ctrl-label">Cond.</span></div>
 <div class="stats">
   <div class="stat"><div class="stat-val" id="s-nodos">--</div><div class="stat-lbl">Nodes</div></div>
   <div class="stat"><div class="stat-val" id="s-edges">--</div><div class="stat-lbl">Edges</div></div>
   <div class="stat"><div class="stat-val" id="s-clusters">--</div><div class="stat-lbl">Clusters</div></div>
   <div class="stat"><div class="stat-val" id="s-terminals">--</div><div class="stat-lbl">Terminals</div></div>
 </div>
-
 <div class="workspace">
   <div id="network-wrap">
     <div id="network"></div>
-    <div class="network-hint" id="net-hint">Pinch to zoom &middot; drag to pan &middot; tap node for info</div>
+    <div class="network-hint" id="net-hint">Tap node for info &middot; pinch to zoom</div>
   </div>
-
-  <!-- BOTTOM PANEL (móvil) / SIDEBAR (desktop) -->
   <div class="bottom-panel" id="bottom-panel">
-
-    <!-- Toggle bar — sólo visible en móvil -->
     <div class="panel-toggle" id="panel-toggle">
       <div class="panel-toggle-left">
         <span class="panel-title">Clusters</span>
-        <span id="active-cluster-badge" style="font-size:0.65em;color:var(--accent);font-family:'IBM Plex Mono',monospace"></span>
+        <span class="active-badge" id="active-badge"></span>
       </div>
       <span class="panel-arrow" id="panel-arrow">▲</span>
     </div>
-
-    <!-- Pills scrollables — sólo en móvil cuando está colapsado/semiabierto -->
     <div class="cluster-pills-row" id="cluster-pills"></div>
-
-    <!-- Título sidebar desktop -->
-    <div class="panel-sidebar-title">Clusters — ranked by |log2FC|</div>
-
-    <!-- Lista de clusters (desktop) -->
-    <div class="panel-content" id="cluster-list"></div>
-
-    <!-- Leyenda -->
-    <div class="legend-section">
-      <div class="legend-group">
-        <div class="dot" style="background:#818cf8"></div>
-        <span class="legend-label">Terminal (differential)</span>
-      </div>
-      <div class="legend-group">
-        <div class="tri" style="border-bottom-color:#818cf8"></div>
-        <span class="legend-label">Steiner (connector)</span>
-      </div>
-      <div class="legend-group">
-        <div class="ring" style="border-color:var(--up)"></div>
-        <span class="legend-label">Up-regulated</span>
-      </div>
-      <div class="legend-group">
-        <div class="ring" style="border-color:var(--down)"></div>
-        <span class="legend-label">Down-regulated</span>
-      </div>
-      <div class="legend-group">
-        <div class="ring" style="border-color:#888"></div>
-        <span class="legend-label">Steiner / unknown</span>
-      </div>
+    <div class="panel-body" id="cluster-list"></div>
+    <div class="legend-row">
+      <div class="leg-item"><div class="dot" style="background:#818cf8"></div>Terminal</div>
+      <div class="leg-item"><div class="tri" style="border-bottom-color:#818cf8"></div>Steiner</div>
+      <div class="leg-item"><div class="ring" style="border-color:#f87171"></div>Up-reg.</div>
+      <div class="leg-item"><div class="ring" style="border-color:#60a5fa"></div>Down-reg.</div>
     </div>
   </div>
 </div>
 
-<div id="tooltip"><div class="tt-inner" id="tt-content"></div></div>
+<!-- NODE MODAL -->
+<div class="node-modal-overlay" id="node-modal-overlay">
+  <div class="node-modal" id="node-modal">
+    <span class="node-modal-handle"></span>
+    <div class="node-modal-content" id="node-modal-content"></div>
+    <button class="node-modal-close" id="node-modal-close">Cerrar</button>
+  </div>
+</div>
 
 <script>
 const DATA = {"case1":{"nodos":[{"id":"Abcb4","label":"Abcb4","x":1909.6991,"y":1199.8835,"size":29.303,"color":"#E41A1C","border":"#0000FF","shape":"dot","cluster":1,"title":"<div style='max-width:340px;padding:14px;background:#fff;color:#333;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'><h4 style='margin:0 0 8px 0;color:#2E4057;border-bottom:2px solid #eee;padding-bottom:6px;'>Rank 8 -- Cluster 1<\/h4><p style='margin:0 0 8px 0;color:#666;font-size:11px;'>|log2FC| medio: <b>0.658<\/b><\/p><b>Genes (8):<\/b><br><span style='font-size:11px;'>Abcb4, Becn1, Gls2, Hmgb1, Tfam, Tp53, Ulk2, Wipi2<\/span><br><br><b>KEGG:<\/b><br>Huntington disease (p=1.3e-06)<br>Autophagy - other (p=1.5e-06)<br>Autophagy - animal (p=4.2e-06)<br><br><b>BP:<\/b><br>autophagy of mitochondrion (p=8.2e-08)<br>response to starvation (p=3.8e-06) <br> <b>MF:<\/b><br>DNA binding, bending (p=1.3e-04)<br>single-stranded DNA binding (p=1.4e-03) <br> <b>CC:<\/b><br>phagophore assembly site (p=3.9e-07)<br>autophagosome (p=9.8e-06)<\/div>","status":"down-regulated"},{"id":"Abcc8","label":"Abcc8","x":1107.9304,"y":1385.0729,"size":15,"color":"#377EB8","border":"#888888","shape":"triangle","cluster":2,"title":"<div style='max-width:340px;padding:14px;background:#fff;color:#333;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'><h4 style='margin:0 0 8px 0;color:#2E4057;border-bottom:2px solid #eee;padding-bottom:6px;'>Rank 5 -- Cluster 2<\/h4><p style='margin:0 0 8px 0;color:#666;font-size:11px;'>|log2FC| medio: <b>0.716<\/b><\/p><b>Genes (13):<\/b><br><span style='font-size:11px;'>Abcc8, Calml3, Ccdc51, Cftr, Csnk2b, Cspg5, Ctnnb1, Magi2, Mbp, Med1, Prkacb, Prkar1b, Thrap3<\/span><br><br><b>KEGG:<\/b><br>Gastric acid secretion (p=3.4e-05)<br>Melanogenesis (p=7.6e-05)<br>Thyroid hormone signaling pathway (p=1.6e-04)<br><br><b>BP:<\/b><br>synaptic vesicle cycle (p=2.8e-05)<br>liver development (p=3.0e-05) <br> <b>MF:<\/b><br>RNA polymerase II-specific DNA-binding transcription factor binding (p=1.3e-04)<br>nuclear receptor binding (p=1.8e-04) <br> <b>CC:<\/b><br>serine/threonine protein kinase complex (p=5.9e-05)<br>protein kinase complex (p=8.2e-05)<\/div>","status":"Steiner"},{"id":"Adcy5","label":"Adcy5","x":724.9779,"y":1407.8213,"size":15,"color":"#4DAF4A","border":"#888888","shape":"triangle","cluster":3,"title":"<div style='max-width:340px;padding:14px;background:#fff;color:#333;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'><h4 style='margin:0 0 8px 0;color:#2E4057;border-bottom:2px solid #eee;padding-bottom:6px;'>Rank 2 -- Cluster 3<\/h4><p style='margin:0 0 8px 0;color:#666;font-size:11px;'>|log2FC| medio: <b>1.058<\/b><\/p><b>Genes (7):<\/b><br><span style='font-size:11px;'>Adcy5, Entpd1, Entpd2, Nudt2, Nudt21, Ptbp2, Srsf3<\/span><br><br><b>KEGG:<\/b><br>Purine metabolism (p=2.8e-07)<br>Pyrimidine metabolism (p=3.6e-04)<br>Nucleotide metabolism (p=7.9e-04)<br><br><b>BP:<\/b><br>purine ribonucleotide biosynthetic process (p=1.1e-05)<br>cellular response to interferon-alpha (p=1.6e-05) <br> <b>MF:<\/b><br>GDP phosphatase activity (p=6.2e-06)<br>nucleoside diphosphate phosphatase activity (p=1.9e-05) <br> <b>CC:<\/b><br>basement membrane (p=5.4e-04)<br>paraspeckles (p=3.1e-03)<\/div>","status":"Steiner"},{"id":"Adcyap1r1","label":"Adcyap1r1","x":100,"y":1412.659,"size":31.9295,"color":"#984EA3","border":"#FF0000","shape":"dot","cluster":4,"title":"<div style='max-width:340px;padding:14px;background:#fff;color:#333;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'><h4 style='margin:0 0 8px 0;color:#2E4057;border-bottom:2px solid #eee;padding-bottom:6px;'>Rank 6 -- Cluster 4<\/h4><p style='margin:0 0 8px 0;color:#666;font-size:11px;'>|log2FC| medio: <b>0.67<\/b><\/p><b>Genes (9):<\/b><br><span style='font-size:11px;'>Adcyap1r1, Bpnt1, Crhr1, Fzd7, Gnao1, Gnaz, Gnb1, Papss2, Sult4a1<\/span><br><br><b>KEGG:<\/b><br>Long-term depression (p=8.7e-06)<br>Sulfur metabolism (p=2.0e-05)<br>Circadian entrainment (p=3.4e-05)<br><br><b>BP:<\/b><br>adenylate cyclase-modulating G protein-coupled receptor signaling pathway (p=4.1e-06)<br>G protein-coupled serotonin receptor signaling pathway (p=3.1e-05) <br> <b>MF:<\/b><br>G-protein beta/gamma-subunit complex binding (p=7.0e-05)<br>GTPase activity (p=3.4e-04) <br> <b>CC:<\/b><br>heterotrimeric G-protein complex (p=5.8e-07)<br>GTPase complex (p=9.1e-07)<\/div>","status":"up-regulated"},{"id":"Akap10","label":"Akap10","x":1094.9934,"y":1250.1918,"size":15,"color":"#FF7F00","border":"#888888","shape":"triangle","cluster":5,"title":"<div style='max-width:340px;padding:14px;background:#fff;color:#333;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'><h4 style='margin:0 0 8px 0;color:#2E4057;border-bottom:2px solid #eee;padding-bottom:6px;'>Rank 3 -- Cluster 5<\/h4><p style='margin:0 0 8px 0;color:#666;font-size:11px;'>|log2FC| medio: <b>0.811<\/b><\/p><b>Genes (4):<\/b><br><span style='font-size:11px;'>Akap10, Rab4a, Snx5, Vps35<\/span><br><br><b>KEGG:<\/b><br>Endocytosis (p=1.4e-05)<br>Lysosome biogenesis (p=6.6e-02)<br><br><b>BP:<\/b><br>retrograde transport, endosome to Golgi (p=1.5e-04)<br>receptor localization to synapse (p=2.1e-04) <br> <b>MF:<\/b><br>D1 dopamine receptor binding (p=3.6e-06)<br>dopamine receptor binding (p=1.3e-05) <br> <b>CC:<\/b><br>retromer complex (p=7.4e-06)<br>early endosome (p=3.0e-05)<\/div>","status":"Steiner"},{"id":"App","label":"App","x":1690.3553,"y":2005.987,"size":34.2962,"color":"#A65628","border":"#FF0000","shape":"dot","cluster":6,"title":"<div style='max-width:340px;padding:14px;background:#fff;color:#333;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'><h4 style='margin:0 0 8px 0;color:#2E4057;border-bottom:2px solid #eee;padding-bottom:6px;'>Rank 4 -- Cluster 6<\/h4><p style='margin:0 0 8px 0;color:#666;font-size:11px;'>|log2FC| medio: <b>0.728<\/b><\/p><b>Genes (11):<\/b><br><span style='font-size:11px;'>App, Caprin1, Dcps, Ddx6, Edc4, Fmr1, Mapt, Psen1, Pura, Sncb, Xrn1<\/span><br><br><b>KEGG:<\/b><br>RNA degradation (p=1.7e-07)<br>Alzheimer disease (p=1.8e-03)<br>Notch signaling pathway (p=4.0e-02)<br><br><b>BP:<\/b><br>negative regulation of translation (p=7.0e-08)<br>regulation of translation (p=7.6e-08) <br> <b>MF:<\/b><br>RNA 7-methylguanosine cap binding (p=1.9e-05)<br>RNA cap binding (p=3.5e-05) <br> <b>CC:<\/b><br>cytoplasmic ribonucleoprotein granule (p=1.9e-11)<br>ribonucleoprotein granule (p=3.3e-11)<\/div>","status":"up-regulated"},{"id":"Arf6","label":"Arf6","x":1106.6375,"y":806.4081,"size":15,"color":"#F781BF","border":"#888888","shape":"triangle","cluster":7,"title":"<div style='max-width:340px;padding:14px;background:#fff;color:#333;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'><h4 style='margin:0 0 8px 0;color:#2E4057;border-bottom:2px solid #eee;padding-bottom:6px;'>Rank 1 -- Cluster 7<\/h4><p style='margin:0 0 8px 0;color:#666;font-size:11px;'>|log2FC| medio: <b>1.129<\/b><\/p><b>Genes (13):<\/b><br><span style='font-size:11px;'>Arf6, Arfip2, Creld1, Diaph1, Fyn, Gata4, Llgl1, Pfn2, Prkcz, Ralb, Ralgds, Rhoa, Yes1<\/span><br><br><b>KEGG:<\/b><br>Phospholipase D signaling pathway (p=1.8e-07)<br>Rap1 signaling pathway (p=1.1e-06)<br>Tight junction (p=1.6e-05)<br><br><b>BP:<\/b><br>negative regulation of cell projection organization (p=2.6e-07)<br>establishment of cell polarity (p=3.8e-06) <br> <b>MF:<\/b><br>G protein activity (p=4.2e-06)<br>GDP binding (p=2.7e-05) <br> <b>CC:<\/b><br>cell cortex (p=2.0e-06)<br>ruffle (p=4.7e-06)<\/div>","status":"Steiner"},{"id":"Arfip2","label":"Arfip2","x":1055.4763,"y":797.528,"size":33.2119,"color":"#F781BF","border":"#0000FF","shape":"dot","cluster":7,"title":"<div style='max-width:340px;padding:14px;background:#fff;color:#333;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'><h4 style='margin:0 0 8px 0;color:#2E4057;border-bottom:2px solid #eee;padding-bottom:6px;'>Rank 1 -- Cluster 7<\/h4><p style='margin:0 0 8px 0;color:#666;font-size:11px;'>|log2FC| medio: <b>1.129<\/b><\/p><b>Genes (13):<\/b><br><span style='font-size:11px;'>Arf6, Arfip2, Creld1, Diaph1, Fyn, Gata4, Llgl1, Pfn2, Prkcz, Ralb, Ralgds, Rhoa, Yes1<\/span><br><br><b>KEGG:<\/b><br>Phospholipase D signaling pathway (p=1.8e-07)<br>Rap1 signaling pathway (p=1.1e-06)<br>Tight junction (p=1.6e-05)<br><br><b>BP:<\/b><br>negative regulation of cell projection organization (p=2.6e-07)<br>establishment of cell polarity (p=3.8e-06) <br> <b>MF:<\/b><br>G protein activity (p=4.2e-06)<br>GDP binding (p=2.7e-05) <br> <b>CC:<\/b><br>cell cortex (p=2.0e-06)<br>ruffle (p=4.7e-06)<\/div>","status":"down-regulated"},{"id":"Bag5","label":"Bag5","x":1246.35,"y":334.2478,"size":34.7109,"color":"#999999","border":"#FF0000","shape":"dot","cluster":8,"title":"<div style='max-width:340px;padding:14px;background:#fff;color:#333;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'><h4 style='margin:0 0 8px 0;color:#2E4057;border-bottom:2px solid #eee;padding-bottom:6px;'>Rank 9 -- Cluster 8<\/h4><p style='margin:0 0 8px 0;color:#666;font-size:11px;'>|log2FC| medio: <b>0.566<\/b><\/p><b>Genes (4):<\/b><br><span style='font-size:11px;'>Bag5, Dgkq, Gak, Pld2<\/span><br><br><b>KEGG:<\/b><br>Choline metabolism in cancer (p=7.8e-05)<br>Glycerophospholipid metabolism (p=8.3e-05)<br>Phospholipase D signaling pathway (p=1.8e-04)<br><br><b>BP:<\/b><br>phosphatidic acid biosynthetic process (p=1.0e-05)<br>phosphatidic acid metabolic process (p=1.5e-05) <br> <b>MF:<\/b><br>ATP-dependent diacylglycerol kinase activity (p=2.5e-03)<br>adenyl-nucleotide exchange factor activity (p=3.0e-03) <br> <b>CC:<\/b><br>inclusion body (p=1.6e-02)<br>brush border membrane (p=1.6e-02)<\/div>","status":"up-regulated"},{"id":"Becn1","label":"Becn1","x":1647.7284,"y":1221.3656,"size":15,"color":"#E41A1C","border":"#888888","shape":"triangle","cluster":1,"title":"<div style='max-width:340px;padding:14px;background:#fff;color:#333;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'><h4 style='margin:0 0 8px 0;color:#2E4057;border-bottom:2px solid #eee;padding-bottom:6px;'>Rank 8 -- Cluster 1<\/h4><p style='margin:0 0 8px 0;color:#666;font-size:11px;'>|log2FC| medio: <b>0.658<\/b><\/p><b>Genes (8):<\/b><br><span style='font-size:11px;'>Abcb4, Becn1, Gls2, Hmgb1, Tfam, Tp53, Ulk2, Wipi2<\/span><br><br><b>KEGG:<\/b><br>Huntington disease (p=1.3e-06)<br>Autophagy - other (p=1.5e-06)<br>Autophagy - animal (p=4.2e-06)<br><br><b>BP:<\/b><br>autophagy of mitochondrion (p=8.2e-08)<br>response to starvation (p=3.8e-06) <br> <b>MF:<\/b><br>DNA binding, bending (p=1.3e-04)<br>single-stranded DNA binding (p=1.4e-03) <br> <b>CC:<\/b><br>phagophore assembly site (p=3.9e-07)<br>autophagosome (p=9.8e-06)<\/div>","status":"Steiner"},{"id":"Bpnt1","label":"Bpnt1","x":193.362,"y":1175.719,"size":65,"color":"#984EA3","border":"#FF0000","shape":"dot","cluster":4,"title":"<div style='max-width:340px;padding:14px;background:#fff;color:#333;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'><h4 style='margin:0 0 8px 0;color:#2E4057;border-bottom:2px solid #eee;padding-bottom:6px;'>Rank 6 -- Cluster 4<\/h4><p style='margin:0 0 8px 0;color:#666;font-size:11px;'>|log2FC| medio: <b>0.67<\/b><\/p><b>Genes (9):<\/b><br><span style='font-size:11px;'>Adcyap1r1, Bpnt1, Crhr1, Fzd7, Gnao1, Gnaz, Gnb1, Papss2, Sult4a1<\/span><br><br><b>KEGG:<\/b><br>Long-term depression (p=8.7e-06)<br>Sulfur metabolism (p=2.0e-05)<br>Circadian entrainment (p=3.4e-05)<br><br><b>BP:<\/b><br>adenylate cyclase-modulating G protein-coupled receptor signaling pathway (p=4.1e-06)<br>G protein-coupled serotonin receptor signaling pathway (p=3.1e-05) <br> <b>MF:<\/b><br>G-protein beta/gamma-subunit complex binding (p=7.0e-05)<br>GTPase activity (p=3.4e-04) <br> <b>CC:<\/b><br>heterotrimeric G-protein complex (p=5.8e-07)<br>GTPase complex (p=9.1e-07)<\/div>","status":"up-regulated"},{"id":"Calml3","label":"Calml3","x":1231.012,"y":1687.6369,"size":15,"color":"#377EB8","border":"#888888","shape":"triangle","cluster":2,"title":"<div style='max-width:340px;padding:14px;background:#fff;color:#333;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'><h4 style='margin:0 0 8px 0;color:#2E4057;border-bottom:2px solid #eee;padding-bottom:6px;'>Rank 5 -- Cluster 2<\/h4><p style='margin:0 0 8px 0;color:#666;font-size:11px;'>|log2FC| medio: <b>0.716<\/b><\/p><b>Genes (13):<\/b><br><span style='font-size:11px;'>Abcc8, Calml3, Ccdc51, Cftr, Csnk2b, Cspg5, Ctnnb1, Magi2, Mbp, Med1, Prkacb, Prkar1b, Thrap3<\/span><br><br><b>KEGG:<\/b><br>Gastric acid secretion (p=3.4e-05)<br>Melanogenesis (p=7.6e-05)<br>Thyroid hormone signaling pathway (p=1.6e-04)<br><br><b>BP:<\/b><br>synaptic vesicle cycle (p=2.8e-05)<br>liver development (p=3.0e-05) <br> <b>MF:<\/b><br>RNA polymerase II-specific DNA-binding transcription factor binding (p=1.3e-04)<br>nuclear receptor binding (p=1.8e-04) <br> <b>CC:<\/b><br>serine/threonine protein kinase complex (p=5.9e-05)<br>protein kinase complex (p=8.2e-05)<\/div>","status":"Steiner"},{"id":"Caprin1","label":"Caprin1","x":1778.1475,"y":2203.5822,"size":34.9815,"color":"#A65628","border":"#FF0000","shape":"dot","cluster":6,"title":"<div style='max-width:340px;padding:14px;background:#fff;color:#333;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'><h4 style='margin:0 0 8px 0;color:#2E4057;border-bottom:2px solid #eee;padding-bottom:6px;'>Rank 4 -- Cluster 6<\/h4><p style='margin:0 0 8px 0;color:#666;font-size:11px;'>|log2FC| medio: <b>0.728<\/b><\/p><b>Genes (11):<\/b><br><span style='font-size:11px;'>App, Caprin1, Dcps, Ddx6, Edc4, Fmr1, Mapt, Psen1, Pura, Sncb, Xrn1<\/span><br><br><b>KEGG:<\/b><br>RNA degradation (p=1.7e-07)<br>Alzheimer disease (p=1.8e-03)<br>Notch signaling pathway (p=4.0e-02)<br><br><b>BP:<\/b><br>negative regulation of translation (p=7.0e-08)<br>regulation of translation (p=7.6e-08) <br> <b>MF:<\/b><br>RNA 7-methylguanosine cap binding (p=1.9e-05)<br>RNA cap binding (p=3.5e-05) <br> <b>CC:<\/b><br>cytoplasmic ribonucleoprotein granule (p=1.9e-11)<br>ribonucleoprotein granule (p=3.3e-11)<\/div>","status":"up-regulated"},{"id":"Ccdc51","label":"Ccdc51","x":1090.6542,"y":1413.0676,"size":34.5343,"color":"#377EB8","border":"#FF0000","shape":"dot","cluster":2,"title":"<div style='max-width:340px;padding:14px;background:#fff;color:#333;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'><h4 style='margin:0 0 8px 0;color:#2E4057;border-bottom:2px solid #eee;padding-bottom:6px;'>Rank 5 -- Cluster 2<\/h4><p style='margin:0 0 8px 0;color:#666;font-size:11px;'>|log2FC| medio: <b>0.716<\/b><\/p><b>Genes (13):<\/b><br><span style='font-size:11px;'>Abcc8, Calml3, Ccdc51, Cftr, Csnk2b, Cspg5, Ctnnb1, Magi2, Mbp, Med1, Prkacb, Prkar1b, Thrap3<\/span><br><br><b>KEGG:<\/b><br>Gastric acid secretion (p=3.4e-05)<br>Melanogenesis (p=7.6e-05)<br>Thyroid hormone signaling pathway (p=1.6e-04)<br><br><b>BP:<\/b><br>synaptic vesicle cycle (p=2.8e-05)<br>liver development (p=3.0e-05) <br> <b>MF:<\/b><br>RNA polymerase II-specific DNA-binding transcription factor binding (p=1.3e-04)<br>nuclear receptor binding (p=1.8e-04) <br> <b>CC:<\/b><br>serine/threonine protein kinase complex (p=5.9e-05)<br>protein kinase complex (p=8.2e-05)<\/div>","status":"up-regulated"},{"id":"Cftr","label":"Cftr","x":1242.3406,"y":1203.1167,"size":15,"color":"#377EB8","border":"#888888","shape":"triangle","cluster":2,"title":"<div style='max-width:340px;padding:14px;background:#fff;color:#333;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'><h4 style='margin:0 0 8px 0;color:#2E4057;border-bottom:2px solid #eee;padding-bottom:6px;'>Rank 5 -- Cluster 2<\/h4><p style='margin:0 0 8px 0;color:#666;font-size:11px;'>|log2FC| medio: <b>0.716<\/b><\/p><b>Genes (13):<\/b><br><span style='font-size:11px;'>Abcc8, Calml3, Ccdc51, Cftr, Csnk2b, Cspg5, Ctnnb1, Magi2, Mbp, Med1, Prkacb, Prkar1b, Thrap3<\/span><br><br><b>KEGG:<\/b><br>Gastric acid secretion (p=3.4e-05)<br>Melanogenesis (p=7.6e-05)<br>Thyroid hormone signaling pathway (p=1.6e-04)<br><br><b>BP:<\/b><br>synaptic vesicle cycle (p=2.8e-05)<br>liver development (p=3.0e-05) <br> <b>MF:<\/b><br>RNA polymerase II-specific DNA-binding transcription factor binding (p=1.3e-04)<br>nuclear receptor binding (p=1.8e-04) <br> <b>CC:<\/b><br>serine/threonine protein kinase complex (p=5.9e-05)<br>protein kinase complex (p=8.2e-05)<\/div>","status":"Steiner"},{"id":"Cox4i1","label":"Cox4i1","x":2109.7531,"y":1106.5755,"size":15,"color":"#66C2A5","border":"#888888","shape":"triangle","cluster":9,"title":"<div style='max-width:340px;padding:14px;background:#fff;color:#333;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'><h4 style='margin:0 0 8px 0;color:#2E4057;border-bottom:2px solid #eee;padding-bottom:6px;'>Rank 7 -- Cluster 9<\/h4><p style='margin:0 0 8px 0;color:#666;font-size:11px;'>|log2FC| medio: <b>0.661<\/b><\/p><b>Genes (8):<\/b><br><span style='font-size:11px;'>Cox4i1, Cox6a1, Glo1, Ndufs8, Rpl12, Rpl18, Rps10, Uba52<\/span><br><br><b>KEGG:<\/b><br>Parkinson disease (p=3.3e-05)<br>Oxidative phosphorylation (p=1.9e-04)<br>Non-alcoholic fatty liver disease (p=2.3e-04)<br><br><b>BP:<\/b><br>aerobic electron transport chain (p=3.8e-06)<br>mitochondrial ATP synthesis coupled electron transport (p=5.9e-06) <br> <b>MF:<\/b><br>structural constituent of ribosome (p=1.7e-05)<br>carbon-sulfur lyase activity (p=5.5e-03) <br> <b>CC:<\/b><br>cytosolic ribosome (p=4.2e-06)<br>ribosomal subunit (p=9.1e-06)<\/div>","status":"Steiner"},{"id":"Cox6a1","label":"Cox6a1","x":2692.491,"y":899.6083,"size":31.9553,"color":"#66C2A5","border":"#FF0000","shape":"dot","cluster":9,"title":"<div style='max-width:340px;padding:14px;background:#fff;color:#333;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'><h4 style='margin:0 0 8px 0;color:#2E4057;border-bottom:2px solid #eee;padding-bottom:6px;'>Rank 7 -- Cluster 9<\/h4><p style='margin:0 0 8px 0;color:#666;font-size:11px;'>|log2FC| medio: <b>0.661<\/b><\/p><b>Genes (8):<\/b><br><span style='font-size:11px;'>Cox4i1, Cox6a1, Glo1, Ndufs8, Rpl12, Rpl18, Rps10, Uba52<\/span><br><br><b>KEGG:<\/b><br>Parkinson disease (p=3.3e-05)<br>Oxidative phosphorylation (p=1.9e-04)<br>Non-alcoholic fatty liver disease (p=2.3e-04)<br><br><b>BP:<\/b><br>aerobic electron transport chain (p=3.8e-06)<br>mitochondrial ATP synthesis coupled electron transport (p=5.9e-06) <br> <b>MF:<\/b><br>structural constituent of ribosome (p=1.7e-05)<br>carbon-sulfur lyase activity (p=5.5e-03) <br> <b>CC:<\/b><br>cytosolic ribosome (p=4.2e-06)<br>ribosomal subunit (p=9.1e-06)<\/div>","status":"up-regulated"},{"id":"Creld1","label":"Creld1","x":1189.3018,"y":668.7727,"size":45.4892,"color":"#F781BF","border":"#0000FF","shape":"dot","cluster":7,"title":"<div style='max-width:340px;padding:14px;background:#fff;color:#333;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.25);'><h4 style='margin:0 0 8px 0;color:#2E4057;border-bottom:2px solid #eee;padding-bottom:6px;'>Rank 1 -- Cluster 7<\/h4><p style='margin:0 0 8px 0;color:#666;font-size:11px;'>|log2FC| medio: <b>1.129<\/b><\/p><b>Genes (13):<\/b><br><span style='font-size:11px;'>Arf6, Arfip2, Creld1, Diaph1, Fyn, Gata4, Llgl1, Pfn2, Prkcz, Ralb, Ralgds, Rhoa, Yes1<\/span><br><br><b>KEGG:<\/b><br>Phospholipase D signaling pathway (p=1.8e-07)<br>Rap1 signaling pathway (p=1.1e-06)<br>Tight junction (p=1.6e-05)<br><br><b>BP:<\/b><br>negative regulation of cell projection organization (p=2.6e-07)<br>establishment of cell polarity (p=3.8e-06) <br> <b>MF:<\/b><br>G protein activity (p=4.2e-06)<br>GDP binding (p=2.7e-05) <br> <b>CC:<\/b><br>cell cortex (p=2.0e-06)<br>ruffle (p=4.7e-06)<\/div>","status":"down-regulated"},{"id":"Crhr1","label":"Crhr1","x":350.6382,"y":1451.438,"size":15,"color":"#984EA3","border":"#888888","shape":"triangle","cluster":4},{"id":"Csnk2b","label":"Csnk2b","x":1108.9664,"y":1603.1081,"size":38.3644,"color":"#377EB8","border":"#FF0000","shape":"dot","cluster":2},{"id":"Cspg5","label":"Cspg5","x":1261.7008,"y":1182.3143,"size":35.4081,"color":"#377EB8","border":"#FF0000","shape":"dot","cluster":2},{"id":"Ctnnb1","label":"Ctnnb1","x":1127.2872,"y":1501.4588,"size":15,"color":"#377EB8","border":"#888888","shape":"triangle","cluster":2},{"id":"Dcps","label":"Dcps","x":1975.7788,"y":2599.9943,"size":33.2279,"color":"#A65628","border":"#0000FF","shape":"dot","cluster":6},{"id":"Ddx6","label":"Ddx6","x":1805.2019,"y":2260.8663,"size":15,"color":"#A65628","border":"#888888","shape":"triangle","cluster":6},{"id":"Dgkq","label":"Dgkq","x":1213.3413,"y":493.5928,"size":55.4733,"color":"#999999","border":"#0000FF","shape":"dot","cluster":8},{"id":"Diaph1","label":"Diaph1","x":1035.2891,"y":234.3277,"size":15,"color":"#F781BF","border":"#888888","shape":"triangle","cluster":7},{"id":"Edc4","label":"Edc4","x":1906.3026,"y":2464.9547,"size":37.3444,"color":"#A65628","border":"#FF0000","shape":"dot","cluster":6},{"id":"Entpd1","label":"Entpd1","x":562.4053,"y":1654.3987,"size":15,"color":"#4DAF4A","border":"#888888","shape":"triangle","cluster":3},{"id":"Entpd2","label":"Entpd2","x":650.1292,"y":1516.9541,"size":42.8368,"color":"#4DAF4A","border":"#FF0000","shape":"dot","cluster":3},{"id":"Fmr1","label":"Fmr1","x":1730.9404,"y":2098.0306,"size":15,"color":"#A65628","border":"#888888","shape":"triangle","cluster":6},{"id":"Fyn","label":"Fyn","x":1271.7369,"y":706.4823,"size":15,"color":"#F781BF","border":"#888888","shape":"triangle","cluster":7},{"id":"Fzd7","label":"Fzd7","x":379.7596,"y":1299.7708,"size":15,"color":"#984EA3","border":"#888888","shape":"triangle","cluster":4},{"id":"Gak","label":"Gak","x":1230.662,"y":410.979,"size":15,"color":"#999999","border":"#888888","shape":"triangle","cluster":8},{"id":"Gata4","label":"Gata4","x":1181.7098,"y":701.2839,"size":15,"color":"#F781BF","border":"#888888","shape":"triangle","cluster":7},{"id":"Glo1","label":"Glo1","x":2760.9886,"y":755.433,"size":30.4847,"color":"#66C2A5","border":"#FF0000","shape":"dot","cluster":9},{"id":"Gls2","label":"Gls2","x":1917.5675,"y":1146.7874,"size":36.0619,"color":"#E41A1C","border":"#FF0000","shape":"dot","cluster":1},{"id":"Gnao1","label":"Gnao1","x":474.2564,"y":1376.8533,"size":29.8975,"color":"#984EA3","border":"#FF0000","shape":"dot","cluster":4},{"id":"Gnaz","label":"Gnaz","x":267.8317,"y":1503.8798,"size":30.829,"color":"#984EA3","border":"#FF0000","shape":"dot","cluster":4},{"id":"Gnb1","label":"Gnb1","x":194.8818,"y":1403.0517,"size":15,"color":"#984EA3","border":"#888888","shape":"triangle","cluster":4},{"id":"Hmgb1","label":"Hmgb1","x":1778.8565,"y":1196.3047,"size":35.7556,"color":"#E41A1C","border":"#FF0000","shape":"dot","cluster":1},{"id":"Llgl1","label":"Llgl1","x":1004.5627,"y":609.7441,"size":56.4785,"color":"#F781BF","border":"#FF0000","shape":"dot","cluster":7},{"id":"Magi2","label":"Magi2","x":1073.1809,"y":1707.3069,"size":36.1852,"color":"#377EB8","border":"#0000FF","shape":"dot","cluster":2},{"id":"Mapt","label":"Mapt","x":1836.1549,"y":2038.8419,"size":15,"color":"#A65628","border":"#888888","shape":"triangle","cluster":6},{"id":"Mbp","label":"Mbp","x":1243.1279,"y":1782.0439,"size":31.4244,"color":"#377EB8","border":"#0000FF","shape":"dot","cluster":2},{"id":"Med1","label":"Med1","x":1218.1878,"y":1356.6495,"size":15,"color":"#377EB8","border":"#888888","shape":"triangle","cluster":2},{"id":"Ndufs8","label":"Ndufs8","x":2732.3366,"y":809.3001,"size":15,"color":"#66C2A5","border":"#888888","shape":"triangle","cluster":9},{"id":"Nudt2","label":"Nudt2","x":502.4979,"y":1749.2932,"size":31.9553,"color":"#4DAF4A","border":"#FF0000","shape":"dot","cluster":3},{"id":"Nudt21","label":"Nudt21","x":475.4351,"y":1790.8774,"size":30.7104,"color":"#4DAF4A","border":"#FF0000","shape":"dot","cluster":3},{"id":"Papss2","label":"Papss2","x":299.4781,"y":1240.9891,"size":15,"color":"#984EA3","border":"#888888","shape":"triangle","cluster":4},{"id":"Pfn2","label":"Pfn2","x":1008.757,"y":100,"size":32.4242,"color":"#F781BF","border":"#FF0000","shape":"dot","cluster":7},{"id":"Pld2","label":"Pld2","x":1193.813,"y":588.046,"size":15,"color":"#999999","border":"#888888","shape":"triangle","cluster":8},{"id":"Prkacb","label":"Prkacb","x":1164.0792,"y":1289.5842,"size":35.7749,"color":"#377EB8","border":"#FF0000","shape":"dot","cluster":2},{"id":"Prkar1b","label":"Prkar1b","x":987.345,"y":1416.2256,"size":36.2807,"color":"#377EB8","border":"#FF0000","shape":"dot","cluster":2},{"id":"Prkcz","label":"Prkcz","x":1110.9768,"y":742.4045,"size":15,"color":"#F781BF","border":"#888888","shape":"triangle","cluster":7},{"id":"Psen1","label":"Psen1","x":1309.5554,"y":1486.1028,"size":15,"color":"#A65628","border":"#888888","shape":"triangle","cluster":6},{"id":"Ptbp2","label":"Ptbp2","x":409.8202,"y":1889.1809,"size":31.9553,"color":"#4DAF4A","border":"#FF0000","shape":"dot","cluster":3},{"id":"Pura","label":"Pura","x":1749.8949,"y":2136.4435,"size":37.9014,"color":"#A65628","border":"#0000FF","shape":"dot","cluster":6},{"id":"Rab4a","label":"Rab4a","x":1034.9759,"y":1220.2895,"size":49.7702,"color":"#FF7F00","border":"#FF0000","shape":"dot","cluster":5},{"id":"Ralb","label":"Ralb","x":942.586,"y":430.3677,"size":31.9553,"color":"#F781BF","border":"#FF0000","shape":"dot","cluster":7},{"id":"Ralgds","label":"Ralgds","x":1065.7504,"y":646.6692,"size":15,"color":"#F781BF","border":"#888888","shape":"triangle","cluster":7},{"id":"Rhoa","label":"Rhoa","x":1150.2471,"y":803.3448,"size":30.9391,"color":"#F781BF","border":"#FF0000","shape":"dot","cluster":7},{"id":"Rpl12","label":"Rpl12","x":2872.6442,"y":885.2585,"size":31.3119,"color":"#66C2A5","border":"#0000FF","shape":"dot","cluster":9},{"id":"Rpl18","label":"Rpl18","x":2983.3721,"y":862.9975,"size":15,"color":"#66C2A5","border":"#888888","shape":"triangle","cluster":9},{"id":"Rps10","label":"Rps10","x":3099.9956,"y":835.217,"size":29.6136,"color":"#66C2A5","border":"#FF0000","shape":"dot","cluster":9},{"id":"Sncb","label":"Sncb","x":1873.369,"y":2049.6754,"size":42.6499,"color":"#A65628","border":"#FF0000","shape":"dot","cluster":6},{"id":"Snx5","label":"Snx5","x":839.3069,"y":1124.4545,"size":42.1248,"color":"#FF7F00","border":"#FF0000","shape":"dot","cluster":5},{"id":"Srsf3","label":"Srsf3","x":433.0805,"y":1854.5255,"size":15,"color":"#4DAF4A","border":"#888888","shape":"triangle","cluster":3},{"id":"Sult4a1","label":"Sult4a1","x":337.7844,"y":1267.3697,"size":36.1041,"color":"#984EA3","border":"#FF0000","shape":"dot","cluster":4},{"id":"Tfam","label":"Tfam","x":2040.2589,"y":1128.3301,"size":49.2644,"color":"#E41A1C","border":"#FF0000","shape":"dot","cluster":1},{"id":"Thrap3","label":"Thrap3","x":1248.6641,"y":1395.7213,"size":31.1109,"color":"#377EB8","border":"#FF0000","shape":"dot","cluster":2},{"id":"Tp53","label":"Tp53","x":1889.1566,"y":1172.4231,"size":15,"color":"#E41A1C","border":"#888888","shape":"triangle","cluster":1},{"id":"Uba52","label":"Uba52","x":2757.4817,"y":900.6882,"size":15,"color":"#66C2A5","border":"#888888","shape":"triangle","cluster":9},{"id":"Ulk2","label":"Ulk2","x":1338.879,"y":1269.8452,"size":15,"color":"#E41A1C","border":"#888888","shape":"triangle","cluster":1},{"id":"Vps35","label":"Vps35","x":994.5639,"y":1201.3867,"size":15,"color":"#FF7F00","border":"#888888","shape":"triangle","cluster":5},{"id":"Wipi2","label":"Wipi2","x":1490.1016,"y":1247.9769,"size":32.8444,"color":"#E41A1C","border":"#FF0000","shape":"dot","cluster":1},{"id":"Xrn1","label":"Xrn1","x":1945.3278,"y":2540.2732,"size":15,"color":"#A65628","border":"#888888","shape":"triangle","cluster":6},{"id":"Yes1","label":"Yes1","x":1352.4232,"y":624.1598,"size":33.8524,"color":"#F781BF","border":"#FF0000","shape":"dot","cluster":7}],"aristas":[{"from":"Prkacb","to":"Rhoa"},{"from":"Ctnnb1","to":"Prkacb"},{"from":"Ctnnb1","to":"Magi2"},{"from":"Calml3","to":"Prkacb"},{"from":"Calml3","to":"Mbp"},{"from":"Cox4i1","to":"Cox6a1"},{"from":"Cox6a1","to":"Uba52"},{"from":"Rpl12","to":"Uba52"},{"from":"Caprin1","to":"Fmr1"},{"from":"App","to":"Fmr1"},{"from":"Fmr1","to":"Pura"},{"from":"Tfam","to":"Tp53"},{"from":"Hmgb1","to":"Tp53"},{"from":"Abcb4","to":"Tp53"},{"from":"Pld2","to":"Rhoa"},{"from":"Gata4","to":"Rhoa"},{"from":"Creld1","to":"Gata4"},{"from":"Arf6","to":"Rhoa"},{"from":"Arf6","to":"Arfip2"},{"from":"Ddx6","to":"Edc4"},{"from":"Edc4","to":"Xrn1"},{"from":"Dcps","to":"Xrn1"},{"from":"Akap10","to":"Rab4a"},{"from":"Rab4a","to":"Vps35"},{"from":"Snx5","to":"Vps35"},{"from":"Fyn","to":"Rhoa"},{"from":"Fyn","to":"Yes1"},{"from":"Adcy5","to":"Prkacb"},{"from":"Adcy5","to":"Entpd2"},{"from":"Akap10","to":"Prkacb"},{"from":"Prkacb","to":"Psen1"},{"from":"App","to":"Psen1"},{"from":"Cox4i1","to":"Tfam"},{"from":"Adcy5","to":"Gnao1"},{"from":"Crhr1","to":"Gnao1"},{"from":"Crhr1","to":"Gnaz"},{"from":"Gls2","to":"Tp53"},{"from":"Gnao1","to":"Gnb1"},{"from":"Adcyap1r1","to":"Gnb1"},{"from":"Ralgds","to":"Rhoa"},{"from":"Ralb","to":"Ralgds"},{"from":"Dgkq","to":"Pld2"},{"from":"Fzd7","to":"Sult4a1"},{"from":"Fzd7","to":"Gnao1"},{"from":"Ulk2","to":"Wipi2"},{"from":"Becn1","to":"Wipi2"},{"from":"Becn1","to":"Hmgb1"},{"from":"Rpl18","to":"Rps10"},{"from":"Rpl12","to":"Rpl18"},{"from":"Csnk2b","to":"Ctnnb1"},{"from":"Prkacb","to":"Prkar1b"},{"from":"Caprin1","to":"Ddx6"},{"from":"Entpd1","to":"Nudt2"},{"from":"Nudt2","to":"Nudt21"},{"from":"Med1","to":"Thrap3"},{"from":"Med1","to":"Prkacb"},{"from":"Abcc8","to":"Ccdc51"},{"from":"Abcc8","to":"Prkacb"},{"from":"Bag5","to":"Gak"},{"from":"Dgkq","to":"Gak"},{"from":"Mapt","to":"Sncb"},{"from":"App","to":"Mapt"},{"from":"Ptbp2","to":"Srsf3"},{"from":"Nudt21","to":"Srsf3"},{"from":"Prkacb","to":"Ulk2"},{"from":"Glo1","to":"Ndufs8"},{"from":"Cox6a1","to":"Ndufs8"},{"from":"Entpd1","to":"Entpd2"},{"from":"Llgl1","to":"Prkcz"},{"from":"Prkcz","to":"Rhoa"},{"from":"Diaph1","to":"Pfn2"},{"from":"Diaph1","to":"Rhoa"},{"from":"Cftr","to":"Cspg5"},{"from":"Cftr","to":"Prkacb"},{"from":"Bpnt1","to":"Papss2"},{"from":"Papss2","to":"Sult4a1"}],"clusters":[{"cluster":7,"color":"#F781BF","count":13,"mean_fc":1.129,"rank":1},{"cluster":3,"color":"#4DAF4A","count":7,"mean_fc":1.058,"rank":2},{"cluster":5,"color":"#FF7F00","count":4,"mean_fc":0.811,"rank":3},{"cluster":6,"color":"#A65628","count":11,"mean_fc":0.728,"rank":4},{"cluster":2,"color":"#377EB8","count":13,"mean_fc":0.716,"rank":5},{"cluster":4,"color":"#984EA3","count":9,"mean_fc":0.67,"rank":6},{"cluster":9,"color":"#66C2A5","count":8,"mean_fc":0.661,"rank":7},{"cluster":1,"color":"#E41A1C","count":8,"mean_fc":0.658,"rank":8},{"cluster":8,"color":"#999999","count":4,"mean_fc":0.566,"rank":9}],"stats":{"nodos":77,"aristas":76,"clusters":9,"terminals":43}},"case2":{"nodos":[{"id":"Abcf1","label":"Abcf1","x":2758.7955,"y":840.2978,"size":15,"color":"#E41A1C","border":"#888888","shape":"triangle","cluster":1},{"id":"Actb","label":"Actb","x":1471.7878,"y":2271.8607,"size":15,"color":"#377EB8","border":"#888888","shape":"triangle","cluster":2},{"id":"Adcyap1r1","label":"Adcyap1r1","x":1556.9181,"y":2273.3715,"size":32.4936,"color":"#377EB8","border":"#FF0000","shape":"dot","cluster":2},{"id":"Aimp2","label":"Aimp2","x":1414.3677,"y":482.7368,"size":41.3343,"color":"#4DAF4A","border":"#0000FF","shape":"dot","cluster":3},{"id":"Akr1b1","label":"Akr1b1","x":1203.012,"y":619.8287,"size":15,"color":"#984EA3","border":"#888888","shape":"triangle","cluster":4},{"id":"Aldh1b1","label":"Aldh1b1","x":1268.0087,"y":675.3247,"size":30.7762,"color":"#984EA3","border":"#FF0000","shape":"dot","cluster":4},{"id":"Ap2a1","label":"Ap2a1","x":1802.725,"y":899.6281,"size":15,"color":"#FF7F00","border":"#888888","shape":"triangle","cluster":5},{"id":"Ap3d1","label":"Ap3d1","x":1934.7317,"y":1261.422,"size":15,"color":"#FF7F00","border":"#888888","shape":"triangle","cluster":5},{"id":"Ap3m1","label":"Ap3m1","x":1824.1146,"y":947.1511,"size":30.4997,"color":"#FF7F00","border":"#0000FF","shape":"dot","cluster":5},{"id":"Arf6","label":"Arf6","x":1522.8806,"y":2130.1131,"size":15,"color":"#377EB8","border":"#888888","shape":"triangle","cluster":2},{"id":"Arfgef2","label":"Arfgef2","x":1590.9941,"y":2133.9303,"size":32.4936,"color":"#377EB8","border":"#0000FF","shape":"dot","cluster":2},{"id":"Arhgap35","label":"Arhgap35","x":1338.1746,"y":2442.5589,"size":15,"color":"#377EB8","border":"#888888","shape":"triangle","cluster":2},{"id":"Bpnt1","label":"Bpnt1","x":3002.3149,"y":443.7241,"size":33.1269,"color":"#A65628","border":"#FF0000","shape":"dot","cluster":6},{"id":"C3","label":"C3","x":141.0349,"y":1012.011,"size":32.0727,"color":"#F781BF","border":"#FF0000","shape":"dot","cluster":7},{"id":"Calm3","label":"Calm3","x":2126.7379,"y":2031.9533,"size":15,"color":"#999999","border":"#888888","shape":"triangle","cluster":8},{"id":"Calml3","label":"Calml3","x":2229.843,"y":1891.4808,"size":15,"color":"#999999","border":"#888888","shape":"triangle","cluster":8},{"id":"Calu","label":"Calu","x":2249.3733,"y":1906.91,"size":32.5251,"color":"#999999","border":"#FF0000","shape":"dot","cluster":8},{"id":"Ccdc127","label":"Ccdc127","x":1490.7986,"y":644.3633,"size":38.929,"color":"#4DAF4A","border":"#0000FF","shape":"dot","cluster":3},{"id":"Edc4","label":"Edc4","x":2984.4339,"y":308.0104,"size":32.4936,"color":"#A65628","border":"#FF0000","shape":"dot","cluster":6},{"id":"Emc7","label":"Emc7","x":1804.2558,"y":605.9076,"size":15,"color":"#FF7F00","border":"#888888","shape":"triangle","cluster":5},{"id":"Emc8","label":"Emc8","x":1800.6213,"y":498.6465,"size":32.2218,"color":"#FF7F00","border":"#0000FF","shape":"dot","cluster":5},{"id":"Entpd2","label":"Entpd2","x":2373.4911,"y":719.1176,"size":31.8031,"color":"#66C2A5","border":"#FF0000","shape":"dot","cluster":9},{"id":"Eprs","label":"Eprs","x":1524.1952,"y":717.1486,"size":15,"color":"#4DAF4A","border":"#888888","shape":"triangle","cluster":3},{"id":"Ermn","label":"Ermn","x":2369.8114,"y":1525.4052,"size":35.2433,"color":"#66C2A5","border":"#0000FF","shape":"dot","cluster":9},{"id":"Fcf1","label":"Fcf1","x":2976.2006,"y":436.2337,"size":15,"color":"#A65628","border":"#888888","shape":"triangle","cluster":6},{"id":"Fkbp1a","label":"Fkbp1a","x":2116.8477,"y":1967.9979,"size":37.2281,"color":"#999999","border":"#FF0000","shape":"dot","cluster":8},{"id":"Flna","label":"Flna","x":1570.0487,"y":2140.6371,"size":15,"color":"#377EB8","border":"#888888","shape":"triangle","cluster":2},{"id":"Gad1","label":"Gad1","x":1352.9853,"y":698.8384,"size":15,"color":"#984EA3","border":"#888888","shape":"triangle","cluster":4},{"id":"Galc","label":"Galc","x":2325.5161,"y":1818.616,"size":15,"color":"#FC8D62","border":"#888888","shape":"triangle","cluster":10},{"id":"Gk","label":"Gk","x":1168.2038,"y":592.5922,"size":32.4936,"color":"#984EA3","border":"#0000FF","shape":"dot","cluster":4},{"id":"Glo1","label":"Glo1","x":1172.7999,"y":697.8258,"size":34.5238,"color":"#984EA3","border":"#FF0000","shape":"dot","cluster":4},{"id":"Gls2","label":"Gls2","x":1462.8075,"y":716.1605,"size":33.7645,"color":"#4DAF4A","border":"#FF0000","shape":"dot","cluster":3},{"id":"Gnaq","label":"Gnaq","x":1543.7607,"y":2205.0191,"size":15,"color":"#377EB8","border":"#888888","shape":"triangle","cluster":2},{"id":"Hba-a1","label":"Hba-a1","x":337.7029,"y":951.0163,"size":15,"color":"#F781BF","border":"#888888","shape":"triangle","cluster":7},{"id":"Hba1","label":"Hba1","x":100,"y":944.5723,"size":35.0849,"color":"#F781BF","border":"#FF0000","shape":"dot","cluster":7},{"id":"Hbb","label":"Hbb","x":209.3124,"y":974.6518,"size":40.6769,"color":"#F781BF","border":"#FF0000","shape":"dot","cluster":7},{"id":"Hp","label":"Hp","x":169.9047,"y":997.0858,"size":15,"color":"#F781BF","border":"#888888","shape":"triangle","cluster":7},{"id":"Hspa5","label":"Hspa5","x":2272.0603,"y":1929.8236,"size":15,"color":"#999999","border":"#888888","shape":"triangle","cluster":8},{"id":"Iqsec3","label":"Iqsec3","x":1514.499,"y":2106.9938,"size":36.5724,"color":"#377EB8","border":"#0000FF","shape":"dot","cluster":2},{"id":"Itm2c","label":"Itm2c","x":1939.3609,"y":1277.428,"size":53.9328,"color":"#FF7F00","border":"#0000FF","shape":"dot","cluster":5},{"id":"Itsn1","label":"Itsn1","x":1468.8419,"y":2129.6833,"size":15,"color":"#377EB8","border":"#888888","shape":"triangle","cluster":2},{"id":"Llgl1","label":"Llgl1","x":1417.337,"y":2211.4176,"size":65,"color":"#377EB8","border":"#FF0000","shape":"dot","cluster":2},{"id":"Lsm7","label":"Lsm7","x":2971.0171,"y":330.0328,"size":15,"color":"#A65628","border":"#888888","shape":"triangle","cluster":6},{"id":"Maoa","label":"Maoa","x":1204.9165,"y":691.5408,"size":15,"color":"#984EA3","border":"#888888","shape":"triangle","cluster":4},{"id":"Mbp","label":"Mbp","x":2292.236,"y":1810.4588,"size":31.5367,"color":"#FC8D62","border":"#0000FF","shape":"dot","cluster":10},{"id":"Mobp","label":"Mobp","x":2360.3277,"y":1587.7986,"size":35.0754,"color":"#FC8D62","border":"#0000FF","shape":"dot","cluster":10},{"id":"Mog","label":"Mog","x":2338.0227,"y":1676.1901,"size":15,"color":"#FC8D62","border":"#888888","shape":"triangle","cluster":10},{"id":"Mtor","label":"Mtor","x":1687.4667,"y":2114.4383,"size":15,"color":"#999999","border":"#888888","shape":"triangle","cluster":8},{"id":"Nme4","label":"Nme4","x":2347.5166,"y":702.3534,"size":15,"color":"#66C2A5","border":"#888888","shape":"triangle","cluster":9},{"id":"Nrgn","label":"Nrgn","x":2152.6189,"y":2132.9163,"size":30.6708,"color":"#999999","border":"#FF0000","shape":"dot","cluster":8},{"id":"Nsmf","label":"Nsmf","x":2516.9004,"y":886.3985,"size":32.4936,"color":"#66C2A5","border":"#FF0000","shape":"dot","cluster":9},{"id":"Osgep","label":"Osgep","x":1513.8477,"y":695.3715,"size":32.7979,"color":"#4DAF4A","border":"#FF0000","shape":"dot","cluster":3},{"id":"Papss2","label":"Papss2","x":3080.5211,"y":454.7425,"size":15,"color":"#A65628","border":"#888888","shape":"triangle","cluster":6},{"id":"Pgam5","label":"Pgam5","x":1731.7632,"y":940.6843,"size":48.7855,"color":"#FF7F00","border":"#FF0000","shape":"dot","cluster":5},{"id":"Pink1","label":"Pink1","x":1752.4738,"y":913.9007,"size":15,"color":"#FF7F00","border":"#888888","shape":"triangle","cluster":5},{"id":"Prkcz","label":"Prkcz","x":1499.2397,"y":2176.552,"size":15,"color":"#377EB8","border":"#888888","shape":"triangle","cluster":2},{"id":"Psap","label":"Psap","x":2412.2019,"y":1855.8855,"size":38.204,"color":"#FC8D62","border":"#FF0000","shape":"dot","cluster":10},{"id":"Rasa1","label":"Rasa1","x":1229.8559,"y":2599.9969,"size":32.0634,"color":"#377EB8","border":"#FF0000","shape":"dot","cluster":2},{"id":"Rem2","label":"Rem2","x":1446.3073,"y":2120.2365,"size":32.4936,"color":"#377EB8","border":"#0000FF","shape":"dot","cluster":2},{"id":"Rhoa","label":"Rhoa","x":1535.2569,"y":2160.3874,"size":33.0588,"color":"#377EB8","border":"#FF0000","shape":"dot","cluster":2},{"id":"Rpl10a","label":"Rpl10a","x":2725.225,"y":825.2689,"size":40.7432,"color":"#E41A1C","border":"#FF0000","shape":"dot","cluster":1},{"id":"Rpl15","label":"Rpl15","x":2264.2767,"y":370.4464,"size":41.441,"color":"#66C2A5","border":"#FF0000","shape":"dot","cluster":9},{"id":"Rpl18","label":"Rpl18","x":2310.4128,"y":677.5272,"size":41.0316,"color":"#66C2A5","border":"#FF0000","shape":"dot","cluster":9},{"id":"Rpl23","label":"Rpl23","x":2370.8155,"y":1475.4789,"size":15,"color":"#66C2A5","border":"#888888","shape":"triangle","cluster":9},{"id":"Rpl27","label":"Rpl27","x":2414.672,"y":401.2333,"size":31.4422,"color":"#66C2A5","border":"#FF0000","shape":"dot","cluster":9},{"id":"Rpl3","label":"Rpl3","x":2324.4082,"y":181.121,"size":36.776,"color":"#66C2A5","border":"#FF0000","shape":"dot","cluster":9},{"id":"Rpl36","label":"Rpl36","x":2373.771,"y":551.7881,"size":35.5816,"color":"#66C2A5","border":"#FF0000","shape":"dot","cluster":9},{"id":"Rpl6","label":"Rpl6","x":2539.0466,"y":489.5923,"size":45.5066,"color":"#66C2A5","border":"#FF0000","shape":"dot","cluster":9},{"id":"Rpl7","label":"Rpl7","x":2262.1927,"y":508.005,"size":32.4936,"color":"#66C2A5","border":"#FF0000","shape":"dot","cluster":9},{"id":"Rpl8","label":"Rpl8","x":2491.9962,"y":628.2254,"size":32.4936,"color":"#66C2A5","border":"#FF0000","shape":"dot","cluster":9},{"id":"Rpl9","label":"Rpl9","x":2327.8368,"y":100,"size":30.0833,"color":"#66C2A5","border":"#FF0000","shape":"dot","cluster":9},{"id":"Rps16","label":"Rps16","x":948.3987,"y":838.0993,"size":39.4762,"color":"#F781BF","border":"#FF0000","shape":"dot","cluster":7},{"id":"Rps19","label":"Rps19","x":374.1867,"y":944.0556,"size":31.3341,"color":"#F781BF","border":"#FF0000","shape":"dot","cluster":7},{"id":"Rps21-2","label":"Rps21-2","x":2504.8417,"y":872.3094,"size":15,"color":"#66C2A5","border":"#888888","shape":"triangle","cluster":9},{"id":"Rps27a","label":"Rps27a","x":1786.5593,"y":871.1208,"size":31.0243,"color":"#FF7F00","border":"#FF0000","shape":"dot","cluster":5},{"id":"Rps3a","label":"Rps3a","x":1597.3552,"y":731.2604,"size":40.572,"color":"#F781BF","border":"#FF0000","shape":"dot","cluster":7},{"id":"Rps5","label":"Rps5","x":2868.6629,"y":431.142,"size":15,"color":"#A65628","border":"#888888","shape":"triangle","cluster":6},{"id":"Serpinh1","label":"Serpinh1","x":2290.5398,"y":1952.0569,"size":34.1015,"color":"#999999","border":"#FF0000","shape":"dot","cluster":8},{"id":"Snu13","label":"Snu13","x":2928.271,"y":408.9213,"size":43.0535,"color":"#A65628","border":"#0000FF","shape":"dot","cluster":6},{"id":"Stambp","label":"Stambp","x":2521.8374,"y":213.5228,"size":31.1584,"color":"#66C2A5","border":"#FF0000","shape":"dot","cluster":9},{"id":"Stxbp1","label":"Stxbp1","x":1334.2068,"y":704.0926,"size":32.4936,"color":"#984EA3","border":"#FF0000","shape":"dot","cluster":4},{"id":"Sult4a1","label":"Sult4a1","x":3099.9971,"y":457.2783,"size":30.0232,"color":"#A65628","border":"#FF0000","shape":"dot","cluster":6},{"id":"Supt7l","label":"Supt7l","x":1503.3097,"y":671.8673,"size":15,"color":"#4DAF4A","border":"#888888","shape":"triangle","cluster":3},{"id":"Tmsb4x","label":"Tmsb4x","x":1444.4238,"y":2319.0564,"size":39.3887,"color":"#377EB8","border":"#FF0000","shape":"dot","cluster":2},{"id":"Tprg1l","label":"Tprg1l","x":2776.6175,"y":847.5984,"size":34.7066,"color":"#E41A1C","border":"#FF0000","shape":"dot","cluster":1},{"id":"Uba5","label":"Uba5","x":1789.6125,"y":835.9044,"size":15,"color":"#FF7F00","border":"#888888","shape":"triangle","cluster":5},{"id":"Uba52","label":"Uba52","x":2506.6228,"y":247.6675,"size":15,"color":"#66C2A5","border":"#888888","shape":"triangle","cluster":9},{"id":"Ufc1","label":"Ufc1","x":1802.8041,"y":638.2401,"size":32.4936,"color":"#FF7F00","border":"#FF0000","shape":"dot","cluster":5},{"id":"Vps29","label":"Vps29","x":1806.1651,"y":583.8166,"size":62.5054,"color":"#FF7F00","border":"#FF0000","shape":"dot","cluster":5}],"aristas":[{"from":"Rps27a","to":"Rps3a"},{"from":"Ap2a1","to":"Rps27a"},{"from":"Ap2a1","to":"Ap3m1"},{"from":"Rpl18","to":"Rpl23"},{"from":"Rpl18","to":"Rps5"},{"from":"Rps5","to":"Snu13"},{"from":"Rpl18","to":"Rps3a"},{"from":"Eprs","to":"Rps3a"},{"from":"Aimp2","to":"Eprs"},{"from":"Uba5","to":"Ufc1"},{"from":"Emc7","to":"Ufc1"},{"from":"Emc7","to":"Emc8"},{"from":"Ap3d1","to":"Itm2c"},{"from":"Ap3d1","to":"Ap3m1"},{"from":"Mobp","to":"Mog"},{"from":"Ermn","to":"Mobp"},{"from":"Aldh1b1","to":"Gad1"},{"from":"Akr1b1","to":"Aldh1b1"},{"from":"Akr1b1","to":"Gk"},{"from":"Mbp","to":"Mog"},{"from":"Eprs","to":"Osgep"},{"from":"Osgep","to":"Supt7l"},{"from":"Ccdc127","to":"Supt7l"},{"from":"Mtor","to":"Rhoa"},{"from":"Arf6","to":"Rhoa"},{"from":"Arf6","to":"Iqsec3"},{"from":"Flna","to":"Rhoa"},{"from":"Arfgef2","to":"Flna"},{"from":"Itsn1","to":"Rhoa"},{"from":"Itsn1","to":"Rem2"},{"from":"Rpl10a","to":"Rpl18"},{"from":"Abcf1","to":"Rpl10a"},{"from":"Abcf1","to":"Tprg1l"},{"from":"Emc7","to":"Vps29"},{"from":"Calml3","to":"Fkbp1a"},{"from":"Calml3","to":"Mbp"},{"from":"Calml3","to":"Calu"},{"from":"Nme4","to":"Rpl18"},{"from":"Entpd2","to":"Nme4"},{"from":"Hba-a1","to":"Hbb"},{"from":"Hbb","to":"Hp"},{"from":"C3","to":"Hp"},{"from":"Hba1","to":"Hbb"},{"from":"Rps16","to":"Rps19"},{"from":"Hba-a1","to":"Rps19"},{"from":"Rpl18","to":"Rpl7"},{"from":"Galc","to":"Psap"},{"from":"Galc","to":"Mbp"},{"from":"Ermn","to":"Rpl23"},{"from":"Rps16","to":"Rps3a"},{"from":"Rpl18","to":"Rpl3"},{"from":"Rpl3","to":"Rpl9"},{"from":"Rpl18","to":"Rpl6"},{"from":"Eprs","to":"Gls2"},{"from":"Hspa5","to":"Serpinh1"},{"from":"Calu","to":"Hspa5"},{"from":"Gnaq","to":"Rhoa"},{"from":"Adcyap1r1","to":"Gnaq"},{"from":"Rpl18","to":"Rpl36"},{"from":"Arhgap35","to":"Rhoa"},{"from":"Arhgap35","to":"Rasa1"},{"from":"Rpl15","to":"Rpl18"},{"from":"Rpl18","to":"Rpl27"},{"from":"Fkbp1a","to":"Mtor"},{"from":"Gad1","to":"Stxbp1"},{"from":"Gad1","to":"Gls2"},{"from":"Actb","to":"Tmsb4x"},{"from":"Actb","to":"Rhoa"},{"from":"Rpl18","to":"Rpl8"},{"from":"Bpnt1","to":"Fcf1"},{"from":"Bpnt1","to":"Papss2"},{"from":"Papss2","to":"Sult4a1"},{"from":"Calm3","to":"Fkbp1a"},{"from":"Calm3","to":"Nrgn"},{"from":"Edc4","to":"Lsm7"},{"from":"Lsm7","to":"Snu13"},{"from":"Pgam5","to":"Pink1"},{"from":"Pink1","to":"Rps27a"},{"from":"Rps27a","to":"Uba5"},{"from":"Glo1","to":"Maoa"},{"from":"Aldh1b1","to":"Maoa"},{"from":"Llgl1","to":"Prkcz"},{"from":"Prkcz","to":"Rhoa"},{"from":"Stambp","to":"Uba52"},{"from":"Rpl18","to":"Uba52"},{"from":"Nsmf","to":"Rps21-2"},{"from":"Rpl18","to":"Rps21-2"},{"from":"Fcf1","to":"Snu13"}],"clusters":[{"cluster":1,"color":"#E41A1C","count":3,"mean_fc":1.326,"rank":1},{"cluster":4,"color":"#984EA3","count":7,"mean_fc":0.973,"rank":2},{"cluster":8,"color":"#999999","count":8,"mean_fc":0.943,"rank":3},{"cluster":9,"color":"#66C2A5","count":17,"mean_fc":0.907,"rank":4},{"cluster":10,"color":"#FC8D62","count":5,"mean_fc":0.851,"rank":5},{"cluster":2,"color":"#377EB8","count":15,"mean_fc":0.813,"rank":6},{"cluster":3,"color":"#4DAF4A","count":6,"mean_fc":0.75,"rank":7},{"cluster":6,"color":"#A65628","count":8,"mean_fc":0.744,"rank":8},{"cluster":5,"color":"#FF7F00","count":12,"mean_fc":0.678,"rank":9},{"cluster":7,"color":"#F781BF","count":8,"mean_fc":0.519,"rank":10}],"stats":{"nodos":89,"aristas":88,"clusters":10,"terminals":55}}};
+const META=[{"id":"case1","label":"Alcohol","color":"#E41A1C"},{"id":"case2","label":"Alcohol_sexo","color":"#C48843"}];
+let activeCond="case1",net=null,selCluster=null,nodesDS=null,panelExpanded=false;
 
-const META = [{"id":"case1","label":"Alcohol","color":"#E41A1C"},{"id":"case2","label":"Alcohol_sexo","color":"#C48843"}];
-let activeCond = "case1";
-let net = null;
-let selCluster = null;
-let isMobile = window.innerWidth < 640;
-let panelExpanded = false;
-let nodesDataSet = null;
-
-const controls = document.getElementById("controls");
-META.forEach(m => {
-  const btn = document.createElement("button");
-  btn.className = "cond-btn" + (m.id === activeCond ? " active" : "");
-  btn.dataset.cond = m.id;
-  btn.textContent = m.label;
-  btn.style.setProperty("--c", m.color);
-  btn.addEventListener("click", function() {
-    document.querySelectorAll(".cond-btn").forEach(b => b.classList.remove("active"));
-    this.classList.add("active");
-    activeCond = this.dataset.cond;
-    render();
+const controls=document.getElementById("controls");
+META.forEach(m=>{
+  const btn=document.createElement("button");
+  btn.className="cond-btn"+(m.id===activeCond?" active":"");
+  btn.dataset.cond=m.id; btn.textContent=m.label;
+  btn.style.setProperty("--c",m.color);
+  btn.addEventListener("click",function(){
+    document.querySelectorAll(".cond-btn").forEach(b=>b.classList.remove("active"));
+    this.classList.add("active"); activeCond=this.dataset.cond; render();
   });
   controls.appendChild(btn);
 });
 
-document.getElementById("panel-toggle").addEventListener("click", () => {
-  panelExpanded = !panelExpanded;
-  const panel = document.getElementById("bottom-panel");
-  panel.classList.toggle("expanded", panelExpanded);
+document.getElementById("panel-toggle").addEventListener("click",()=>{
+  panelExpanded=!panelExpanded;
+  document.getElementById("bottom-panel").classList.toggle("expanded",panelExpanded);
 });
 
-function render() {
-  selCluster = null;
-  panelExpanded = false;
-  document.getElementById("bottom-panel").classList.remove("expanded");
+const overlay=document.getElementById("node-modal-overlay");
+const modalContent=document.getElementById("node-modal-content");
+document.getElementById("node-modal-close").addEventListener("click",closeModal);
+overlay.addEventListener("click",e=>{ if(e.target===overlay) closeModal(); });
 
-  const d = DATA[activeCond];
-  if (!d || !d.nodos || d.nodos.length === 0) return;
-
-  document.getElementById("s-nodos").textContent     = d.stats.nodos;
-  document.getElementById("s-edges").textContent     = d.stats.aristas;
-  document.getElementById("s-clusters").textContent  = d.stats.clusters;
-  document.getElementById("s-terminals").textContent = d.stats.terminals;
-
-  nodesDataSet = new vis.DataSet(d.nodos.map(n => ({
-    id: n.id, label: n.label, x: n.x, y: n.y,
-    size: Math.max(isMobile ? 10 : 8, n.size * (isMobile ? 0.7 : 1)),
-    color: { background: n.color, border: n.border,
-             highlight: { background: n.color, border: n.border } },
-    borderWidth: 3, shape: n.shape,
-    font: { size: Math.max(9, (isMobile ? n.size * 0.35 : n.size * 0.5)),
-            color: "#1e293b", face: "IBM Plex Sans", bold: true },
-    cluster: n.cluster,
-    tooltipData: n.title || null
-  })));
-
-  const edges = new vis.DataSet(d.aristas.map((e, i) => ({
-    id: i, from: e.from, to: e.to,
-    color: { color: "#94a3b8", opacity: 0.9 }, width: isMobile ? 1.5 : 2
-  })));
-
-  if (net) net.destroy();
-  net = new vis.Network(
-    document.getElementById("network"),
-    { nodes: nodesDataSet, edges },
-    {
-      physics: false,
-      interaction: {
-        hover: !isMobile,
-        zoomView: true,
-        dragView: true,
-        dragNodes: false,
-        navigationButtons: false,
-        keyboard: false
-      }
-    }
-  );
-
-  const tooltip  = document.getElementById("tooltip");
-  const ttContent = document.getElementById("tt-content");
-
-  if (!isMobile) {
-    net.on("hoverNode", p => {
-      const n = nodesDataSet.get(p.node);
-      if (n && n.tooltipData) {
-        ttContent.innerHTML = n.tooltipData.replace(/\\"/g, '"');
-        tooltip.style.display = "block";
-      }
-    });
-    net.on("blurNode", () => { tooltip.style.display = "none"; });
-    document.getElementById("network-wrap").addEventListener("mousemove", e => {
-      if (tooltip.style.display === "block") {
-        const x = e.clientX + 16, y = e.clientY + 16;
-        const tw = tooltip.offsetWidth, th = tooltip.offsetHeight;
-        tooltip.style.left = (x + tw > window.innerWidth  ? e.clientX - tw - 10 : x) + "px";
-        tooltip.style.top  = (y + th > window.innerHeight ? e.clientY - th - 10 : y) + "px";
-      }
-    });
-  } else {
-    net.on("click", params => {
-      if (params.nodes.length > 0) {
-        const n = nodesDataSet.get(params.nodes[0]);
-        if (n && n.tooltipData) {
-          ttContent.innerHTML = n.tooltipData.replace(/\\"/g, '"');
-          tooltip.style.display = "block";
-          tooltip.style.left = "14px";
-          tooltip.style.top = "auto";
-          tooltip.style.bottom = "260px";
-          setTimeout(() => { tooltip.style.display = "none"; }, 5000);
-        }
-      } else {
-        tooltip.style.display = "none";
-      }
-    });
-  }
-
-  buildClusterUI(d);
-
-  const hint = document.getElementById("net-hint");
-  hint.classList.remove("hide");
-  setTimeout(() => hint.classList.add("hide"), 3000);
+function openModal(html){
+  modalContent.innerHTML=html;
+  overlay.classList.add("show");
+}
+function closeModal(){
+  overlay.classList.remove("show");
 }
 
-function buildClusterUI(d) {
-  const list   = document.getElementById("cluster-list");
-  const pills  = document.getElementById("cluster-pills");
-  list.innerHTML = "";
-  pills.innerHTML = "";
+function render(){
+  selCluster=null; panelExpanded=false;
+  document.getElementById("bottom-panel").classList.remove("expanded");
+  document.getElementById("active-badge").textContent="";
+  const d=DATA[activeCond];
+  if(!d||!d.nodos||!d.nodos.length) return;
+  document.getElementById("s-nodos").textContent=d.stats.nodos;
+  document.getElementById("s-edges").textContent=d.stats.aristas;
+  document.getElementById("s-clusters").textContent=d.stats.clusters;
+  document.getElementById("s-terminals").textContent=d.stats.terminals;
 
-  d.clusters.forEach(c => {
-    const pill = document.createElement("div");
-    pill.className = "cluster-pill";
-    pill.dataset.cluster = c.cluster;
-    pill.style.background = c.color + "22";
-    pill.innerHTML =
+  nodesDS=new vis.DataSet(d.nodos.map(n=>({
+    id:n.id, label:n.label, x:n.x, y:n.y,
+    size:Math.max(10, n.size*0.75),
+    color:{background:n.color,border:n.border,highlight:{background:n.color,border:n.border}},
+    borderWidth:3, shape:n.shape,
+    font:{size:Math.max(9,n.size*0.38),color:"#1e293b",face:"IBM Plex Sans",bold:true},
+    cluster:n.cluster, tooltipData:n.title||null
+  })));
+
+  const edges=new vis.DataSet(d.aristas.map((e,i)=>({
+    id:i,from:e.from,to:e.to,
+    color:{color:"#94a3b8",opacity:0.85},width:1.5
+  })));
+
+  if(net) net.destroy();
+  net=new vis.Network(document.getElementById("network"),{nodes:nodesDS,edges},{
+    physics:false,
+    interaction:{hover:false,zoomView:true,dragView:true,dragNodes:false,
+                 navigationButtons:false,keyboard:false,tooltipDelay:99999}
+  });
+
+  net.on("click",params=>{
+    if(params.nodes.length>0){
+      const n=nodesDS.get(params.nodes[0]);
+      if(n&&n.tooltipData){
+        const html=n.tooltipData.replace(/\\"/g,'"');
+        openModal(html);
+      }
+    }
+  });
+
+  buildClusterUI(d);
+  const hint=document.getElementById("net-hint");
+  hint.classList.remove("hide");
+  setTimeout(()=>hint.classList.add("hide"),3500);
+}
+
+function buildClusterUI(d){
+  const list=document.getElementById("cluster-list");
+  const pills=document.getElementById("cluster-pills");
+  list.innerHTML=""; pills.innerHTML="";
+  d.clusters.forEach(c=>{
+    // Pill
+    const pill=document.createElement("div");
+    pill.className="cluster-pill"; pill.dataset.cluster=c.cluster;
+    pill.style.background=c.color+"22";
+    pill.innerHTML=
       `<div class="pill-swatch" style="background:${c.color}"></div>
        <span class="pill-label">C${c.cluster}</span>
-       <span class="pill-meta">#${c.rank} ${c.mean_fc}</span>`;
-    pill.onclick = () => toggleCluster(c.cluster, d);
+       <span class="pill-fc">#${c.rank} ${c.mean_fc}</span>`;
+    pill.addEventListener("click",()=>toggleCluster(c.cluster,d));
     pills.appendChild(pill);
-
-    const el = document.createElement("div");
-    el.className = "cluster-item-full";
-    el.dataset.cluster = c.cluster;
-    el.innerHTML =
-      `<div class="swatch" style="background:${c.color}"></div>
-       <div class="cl-info">
-         <div class="cl-name">Cluster ${c.cluster}</div>
-         <div class="cl-meta">${c.count} genes · |FC|=${c.mean_fc}</div>
+    // Card
+    const card=document.createElement("div");
+    card.className="cluster-card"; card.dataset.cluster=c.cluster;
+    card.innerHTML=
+      `<div class="card-swatch" style="background:${c.color}"></div>
+       <div class="card-info">
+         <div class="card-name">Cluster ${c.cluster}</div>
+         <div class="card-meta">${c.count} genes &middot; |FC|=${c.mean_fc}</div>
        </div>
-       <div class="cl-rank">#${c.rank}</div>`;
-    el.onclick = () => toggleCluster(c.cluster, d);
-    list.appendChild(el);
+       <div class="card-rank">#${c.rank}</div>`;
+    card.addEventListener("click",()=>toggleCluster(c.cluster,d));
+    list.appendChild(card);
   });
 }
 
-function toggleCluster(cid, d) {
-  const badge = document.getElementById("active-cluster-badge");
-  if (selCluster === cid) {
-    selCluster = null;
-    badge.textContent = "";
-    nodesDataSet.update(d.nodos.map(n =>
-      ({ id: n.id, color: { background: n.color, border: n.border } })));
-    document.querySelectorAll(".cluster-item-full,.cluster-pill").forEach(x =>
-      x.classList.remove("dimmed", "active"));
+function toggleCluster(cid,d){
+  const badge=document.getElementById("active-badge");
+  if(selCluster===cid){
+    selCluster=null; badge.textContent="";
+    nodesDS.update(d.nodos.map(n=>({id:n.id,color:{background:n.color,border:n.border}})));
+    document.querySelectorAll(".cluster-card,.cluster-pill").forEach(x=>
+      x.classList.remove("dimmed","active"));
   } else {
-    selCluster = cid;
-    const cl = d.clusters.find(c => c.cluster === cid);
-    badge.textContent = cl ? `C${cid} #${cl.rank}` : "";
-    nodesDataSet.update(d.nodos.map(n => ({
-      id: n.id,
-      color: n.cluster === cid
-        ? { background: n.color, border: n.border }
-        : { background: "#e2e8f0", border: "#cbd5e1" }
+    selCluster=cid;
+    const cl=d.clusters.find(c=>c.cluster===cid);
+    badge.textContent=cl?`C${cid} #${cl.rank}`:"";
+    nodesDS.update(d.nodos.map(n=>({
+      id:n.id,
+      color:n.cluster===cid
+        ?{background:n.color,border:n.border}
+        :{background:"#e2e8f0",border:"#cbd5e1"}
     })));
-    document.querySelectorAll(".cluster-item-full,.cluster-pill").forEach(x => {
-      const same = parseInt(x.dataset.cluster) === cid;
-      x.classList.toggle("dimmed", !same);
-      x.classList.toggle("active",  same);
+    document.querySelectorAll(".cluster-card,.cluster-pill").forEach(x=>{
+      const same=parseInt(x.dataset.cluster)===cid;
+      x.classList.toggle("dimmed",!same);
+      x.classList.toggle("active",same);
     });
   }
 }
-
-window.addEventListener("resize", () => {
-  isMobile = window.innerWidth < 640;
-});
 
 render();
 </script>
